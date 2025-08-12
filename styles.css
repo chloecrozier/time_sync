@@ -229,6 +229,11 @@ body {
 .availability-grid-container {
     border: 1px solid #e8e8e8;
     margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 480px);
+    max-height: 600px;
+    min-height: 250px;
 }
 
 .grid-header {
@@ -236,6 +241,7 @@ body {
     grid-template-columns: 70px 1fr;
     background: #1a1a1a;
     color: white;
+    flex-shrink: 0;
 }
 
 .time-column-header, .day-header {
@@ -254,13 +260,16 @@ body {
 .availability-grid {
     display: flex;
     flex-direction: column;
-    height: auto;
+    flex: 1;
+    overflow: hidden;
 }
 
 .time-row {
     display: grid;
     grid-template-columns: 70px 1fr;
     border-bottom: 1px solid #f0f0f0;
+    flex: 1;
+    min-height: 25px;
 }
 
 .time-row:last-child {
@@ -285,7 +294,8 @@ body {
 }
 
 .time-slot {
-    aspect-ratio: 3/1;
+    height: 100%;
+    min-height: 25px;
     border-right: 1px solid #f0f0f0;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -455,8 +465,18 @@ body {
         font-size: 0.85rem;
     }
     
-    .availability-grid {
-        max-height: 300px;
+    .availability-grid-container {
+        height: calc(100vh - 420px);
+        min-height: 200px;
+        max-height: 400px;
+    }
+    
+    .time-row {
+        min-height: 20px;
+    }
+    
+    .time-slot {
+        min-height: 20px;
     }
 }
 
@@ -466,6 +486,24 @@ body {
     }
     
     .time-slots {
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    }
+    
+    .availability-grid-container {
+        height: calc(100vh - 380px);
+        min-height: 180px;
+        max-height: 350px;
+    }
+    
+    .time-row {
+        min-height: 18px;
+    }
+    
+    .time-slot {
+        min-height: 18px;
+    }
+    
+    .days-header {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
     }
 }
