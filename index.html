@@ -10,8 +10,8 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1 class="title">⏰ TimeSync</h1>
-            <p class="subtitle">Smart scheduling across time zones</p>
+            <h1 class="title">TimeSync</h1>
+            <p class="subtitle">時間調整</p>
         </header>
 
         <div class="main-content">
@@ -58,10 +58,13 @@
             <div class="poll-display" id="pollDisplay" style="display: none;">
                 <div class="section-header">
                     <h2 id="pollTitleDisplay"></h2>
-                    <div class="timezone-info">
-                        <span id="currentTimezone"></span>
-                        <button class="share-btn" id="shareBtn">📋 Share Poll</button>
-                    </div>
+                                    <div class="action-buttons">
+                    <button class="action-btn" id="shareBtn">Share Poll</button>
+                    <button class="action-btn secondary" id="copyCalendarBtn">Copy Calendar Link</button>
+                </div>
+                <div class="timezone-info">
+                    <span id="currentTimezone"></span>
+                </div>
                 </div>
 
                 <div class="user-input-section">

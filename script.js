@@ -70,6 +70,11 @@ class TimeSync {
             this.sharePoll();
         });
 
+        // Copy calendar link
+        document.getElementById('copyCalendarBtn').addEventListener('click', () => {
+            this.copyCalendarLink();
+        });
+
         // New poll
         document.getElementById('newPollBtn').addEventListener('click', () => {
             this.resetApp();
@@ -329,11 +334,86 @@ class TimeSync {
             });
         } else {
             navigator.clipboard.writeText(url).then(() => {
-                this.showToast('Poll URL copied to clipboard!');
+                this.showToast('Poll URL copied to clipboard');
             }).catch(() => {
-                this.showToast('Unable to copy URL. Please copy it manually from the address bar.');
+                this.showToast('Unable to copy URL. Please copy manually from address bar.');
             });
         }
+    }
+
+    copyCalendarLink() {
+        if (!this.currentPoll) return;
+        
+        const calendarData = this.generateCalendarSchedule();
+        const calendarText = this.formatCalendarText(calendarData);
+        
+        navigator.clipboard.writeText(calendarText).then(() => {
+            this.showToast('Calendar schedule copied to clipboard');
+        }).catch(() => {
+            // Fallback: create a text area and copy manually
+            const textArea = document.createElement('textarea');
+            textArea.value = calendarText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            this.showToast('Calendar schedule copied to clipboard');
+        });
+    }
+
+    generateCalendarSchedule() {
+        const schedule = {};
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        
+        // Initialize schedule structure
+        this.currentPoll.days.forEach(dayIndex => {
+            schedule[dayNames[dayIndex]] = {};
+        });
+        
+        // Get all time slots
+        const timeSlots = this.generateTimeSlots();
+        
+        // For each time slot, find who's available
+        timeSlots.forEach(time => {
+            this.currentPoll.days.forEach(dayIndex => {
+                const key = `${dayIndex}-${time}`;
+                const availableUsers = Object.keys(this.allAvailability).filter(user => 
+                    this.allAvailability[user][key]
+                );
+                
+                if (availableUsers.length > 0) {
+                    const displayTime = this.formatTimeForDisplay(time);
+                    schedule[dayNames[dayIndex]][displayTime] = availableUsers;
+                }
+            });
+        });
+        
+        return schedule;
+    }
+
+    formatCalendarText(schedule) {
+        let text = `${this.currentPoll.title}\n`;
+        text += `${'='.repeat(this.currentPoll.title.length)}\n\n`;
+        
+        Object.keys(schedule).forEach(day => {
+            const daySchedule = schedule[day];
+            if (Object.keys(daySchedule).length > 0) {
+                text += `${day}:\n`;
+                Object.keys(daySchedule).forEach(time => {
+                    const users = daySchedule[time];
+                    text += `  ${time}: ${users.join(', ')}\n`;
+                });
+                text += '\n';
+            }
+        });
+        
+        if (text === `${this.currentPoll.title}\n${'='.repeat(this.currentPoll.title.length)}\n\n`) {
+            text += 'No availability marked yet.\n';
+        }
+        
+        text += `\nGenerated from TimeSync: ${window.location.href}`;
+        
+        return text;
     }
 
     generateId() {
