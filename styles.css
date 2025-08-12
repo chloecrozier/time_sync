@@ -14,16 +14,16 @@ body {
 }
 
 .container {
-    max-width: 1000px;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 30px 15px;
 }
 
 .header {
     text-align: center;
-    margin-bottom: 60px;
+    margin-bottom: 40px;
     border-bottom: 1px solid #e8e8e8;
-    padding-bottom: 40px;
+    padding-bottom: 30px;
 }
 
 .title {
@@ -48,7 +48,7 @@ body {
 }
 
 .poll-creator, .poll-display {
-    padding: 50px;
+    padding: 35px;
 }
 
 .section-header {
@@ -184,9 +184,18 @@ body {
 
 .user-input-section {
     background: #fafafa;
-    padding: 30px;
-    margin-bottom: 40px;
+    padding: 25px;
+    margin-bottom: 30px;
     border: 1px solid #f0f0f0;
+}
+
+.instruction-text {
+    margin-top: 12px;
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 300;
+    text-align: center;
+    font-style: italic;
 }
 
 .user-input-section .form-group {
@@ -219,37 +228,38 @@ body {
 
 .availability-grid-container {
     border: 1px solid #e8e8e8;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
 }
 
 .grid-header {
     display: grid;
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 70px 1fr;
     background: #1a1a1a;
     color: white;
 }
 
 .time-column-header, .day-header {
-    padding: 16px 12px;
+    padding: 12px 8px;
     font-weight: 300;
     text-align: center;
     border-right: 1px solid #333;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
 }
 
 .days-header {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
 }
 
 .availability-grid {
-    max-height: 400px;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    height: auto;
 }
 
 .time-row {
     display: grid;
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 70px 1fr;
     border-bottom: 1px solid #f0f0f0;
 }
 
@@ -258,10 +268,10 @@ body {
 }
 
 .time-label {
-    padding: 10px 8px;
+    padding: 8px 6px;
     background: #fafafa;
     border-right: 1px solid #f0f0f0;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 300;
     display: flex;
     align-items: center;
@@ -271,11 +281,11 @@ body {
 
 .time-slots {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
 }
 
 .time-slot {
-    aspect-ratio: 4/1;
+    aspect-ratio: 3/1;
     border-right: 1px solid #f0f0f0;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -288,15 +298,7 @@ body {
 }
 
 .time-slot:hover {
-    background: #f8f8f8;
-}
-
-.time-slot.available {
-    background: #1a1a1a;
-}
-
-.time-slot.available:hover {
-    background: #333;
+    background: #f8f8f8 !important;
 }
 
 .time-slot-participants {
@@ -378,53 +380,83 @@ body {
 
 @media (max-width: 768px) {
     .container {
-        padding: 20px 15px;
+        padding: 15px 10px;
     }
     
     .title {
-        font-size: 2rem;
+        font-size: 1.8rem;
+    }
+    
+    .header {
+        margin-bottom: 25px;
+        padding-bottom: 20px;
     }
     
     .poll-creator, .poll-display {
-        padding: 30px 25px;
+        padding: 25px 20px;
     }
     
     .time-range-group {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 15px;
     }
     
     .days-selector {
         grid-template-columns: repeat(4, 1fr);
     }
     
+    .user-input-section {
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
     .user-input-section .form-group {
         flex-direction: column;
         align-items: stretch;
-        gap: 15px;
+        gap: 12px;
     }
     
     .grid-header {
-        grid-template-columns: 60px 1fr;
+        grid-template-columns: 50px 1fr;
     }
     
     .time-row {
-        grid-template-columns: 60px 1fr;
+        grid-template-columns: 50px 1fr;
     }
     
     .time-label {
-        font-size: 0.7rem;
-        padding: 8px 4px;
+        font-size: 0.65rem;
+        padding: 6px 3px;
+    }
+    
+    .time-column-header, .day-header {
+        padding: 10px 6px;
+        font-size: 0.75rem;
+    }
+    
+    .days-header {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    }
+    
+    .time-slots {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
     }
     
     .action-buttons {
         flex-direction: column;
         align-items: center;
+        gap: 10px;
     }
     
     .action-btn {
         width: 100%;
-        max-width: 200px;
+        max-width: 180px;
+        padding: 12px 16px;
+        font-size: 0.85rem;
+    }
+    
+    .availability-grid {
+        max-height: 300px;
     }
 }
 

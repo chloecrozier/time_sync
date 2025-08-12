@@ -274,21 +274,40 @@ class TimeSync {
             const time = slot.dataset.time;
             const key = `${day}-${time}`;
             
-            // Reset classes
+            // Reset classes and styles
             slot.classList.remove('available');
+            slot.style.backgroundColor = '';
             
-            // Check if current user has this slot available
-            if (this.currentUser && this.allAvailability[this.currentUser] && this.allAvailability[this.currentUser][key]) {
-                slot.classList.add('available');
+            // Get all available users for this slot
+            const availableUsers = Object.keys(this.allAvailability).filter(user => 
+                this.allAvailability[user][key]
+            );
+            
+            // Apply shading based on number of people available
+            if (availableUsers.length > 0) {
+                const totalUsers = Object.keys(this.allAvailability).length;
+                const intensity = Math.min(availableUsers.length / Math.max(totalUsers, 1), 1);
+                
+                // Check if current user is available for this slot
+                const currentUserAvailable = this.currentUser && 
+                    this.allAvailability[this.currentUser] && 
+                    this.allAvailability[this.currentUser][key];
+                
+                if (currentUserAvailable) {
+                    // Current user's slots are black with varying opacity
+                    const opacity = 0.3 + (intensity * 0.7); // Range from 0.3 to 1.0
+                    slot.style.backgroundColor = `rgba(26, 26, 26, ${opacity})`;
+                    slot.classList.add('available');
+                } else {
+                    // Other users' slots are light gray with varying opacity
+                    const opacity = 0.1 + (intensity * 0.3); // Range from 0.1 to 0.4
+                    slot.style.backgroundColor = `rgba(26, 26, 26, ${opacity})`;
+                }
             }
             
             // Update participants display
             const participantsDiv = slot.querySelector('.time-slot-participants');
             participantsDiv.innerHTML = '';
-            
-            const availableUsers = Object.keys(this.allAvailability).filter(user => 
-                this.allAvailability[user][key]
-            );
             
             availableUsers.forEach(user => {
                 const dot = document.createElement('div');
