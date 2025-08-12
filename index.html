@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeSync - Smart Scheduling</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">⏰ TimeSync</h1>
+            <p class="subtitle">Smart scheduling across time zones</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Poll Creation Section -->
+            <div class="poll-creator" id="pollCreator">
+                <div class="section-header">
+                    <h2>Create New Availability Poll</h2>
+                    <p>Select days and time range for your scheduling poll</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="pollTitle">Poll Title</label>
+                    <input type="text" id="pollTitle" placeholder="e.g., Team Meeting This Week" />
+                </div>
+
+                <div class="form-group">
+                    <label>Select Days</label>
+                    <div class="days-selector">
+                        <button class="day-btn" data-day="0">Sun</button>
+                        <button class="day-btn" data-day="1">Mon</button>
+                        <button class="day-btn" data-day="2">Tue</button>
+                        <button class="day-btn" data-day="3">Wed</button>
+                        <button class="day-btn" data-day="4">Thu</button>
+                        <button class="day-btn" data-day="5">Fri</button>
+                        <button class="day-btn" data-day="6">Sat</button>
+                    </div>
+                </div>
+
+                <div class="time-range-group">
+                    <div class="form-group">
+                        <label for="startTime">Start Time</label>
+                        <select id="startTime"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="endTime">End Time</label>
+                        <select id="endTime"></select>
+                    </div>
+                </div>
+
+                <button class="create-poll-btn" id="createPollBtn">Create Poll</button>
+            </div>
+
+            <!-- Poll Display Section -->
+            <div class="poll-display" id="pollDisplay" style="display: none;">
+                <div class="section-header">
+                    <h2 id="pollTitleDisplay"></h2>
+                    <div class="timezone-info">
+                        <span id="currentTimezone"></span>
+                        <button class="share-btn" id="shareBtn">📋 Share Poll</button>
+                    </div>
+                </div>
+
+                <div class="user-input-section">
+                    <div class="form-group">
+                        <label for="userName">Your Name</label>
+                        <input type="text" id="userName" placeholder="Enter your name" />
+                        <button id="addUserBtn">Add Your Availability</button>
+                    </div>
+                </div>
+
+                <div class="availability-grid-container">
+                    <div class="grid-header">
+                        <div class="time-column-header">Time</div>
+                        <div class="days-header" id="daysHeader"></div>
+                    </div>
+                    <div class="availability-grid" id="availabilityGrid"></div>
+                </div>
+
+                <div class="participants-section">
+                    <h3>Participants</h3>
+                    <div class="participants-list" id="participantsList"></div>
+                </div>
+
+                <button class="new-poll-btn" id="newPollBtn">Create New Poll</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
