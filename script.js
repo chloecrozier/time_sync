@@ -391,24 +391,29 @@ class TimeSync {
             return null;
         }
 
-        // Find best single time slot (highest percentage)
-        const bestSingleSlot = slotAvailability.reduce((best, current) => 
-            current.percentage > best.percentage ? current : best
-        );
+        // Find top 3 best single time slots (highest percentage)
+        const topSingleSlots = slotAvailability
+            .sort((a, b) => {
+                // Primary sort by percentage, secondary by number of people
+                if (b.percentage !== a.percentage) {
+                    return b.percentage - a.percentage;
+                }
+                return b.availableCount - a.availableCount;
+            })
+            .slice(0, 3);
 
-        // Find longest consecutive block with most participants
-        const longestBlock = this.findLongestConsecutiveBlock(slotAvailability, timeSlots);
+        // Find top consecutive blocks with most participants
+        const topBlocks = this.findTopConsecutiveBlocks(slotAvailability, timeSlots);
 
         return {
-            bestSingle: bestSingleSlot,
-            longestBlock: longestBlock
+            bestSingle: topSingleSlots,
+            longestBlock: topBlocks
         };
     }
 
-    findLongestConsecutiveBlock(slotAvailability, timeSlots) {
+    findTopConsecutiveBlocks(slotAvailability, timeSlots) {
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        let bestBlock = null;
-        let maxScore = 0;
+        let allBlocks = [];
 
         // Group by day
         const dayGroups = {};
@@ -446,17 +451,15 @@ class TimeSync {
                         // End current block and evaluate
                         if (currentBlock.length >= 2) {
                             const score = currentBlock.length * currentMinParticipants;
-                            if (score > maxScore) {
-                                maxScore = score;
-                                bestBlock = {
-                                    day: dayNames[dayIndex],
-                                    startTime: currentBlock[0].time,
-                                    endTime: currentBlock[currentBlock.length - 1].time,
-                                    duration: currentBlock.length * 15, // minutes
-                                    minParticipants: currentMinParticipants,
-                                    slots: currentBlock.length
-                                };
-                            }
+                            allBlocks.push({
+                                day: dayNames[dayIndex],
+                                startTime: currentBlock[0].time,
+                                endTime: currentBlock[currentBlock.length - 1].time,
+                                duration: currentBlock.length * 15, // minutes
+                                minParticipants: currentMinParticipants,
+                                slots: currentBlock.length,
+                                score: score
+                            });
                         }
                         
                         // Start new block
@@ -469,58 +472,72 @@ class TimeSync {
             // Check final block
             if (currentBlock.length >= 2) {
                 const score = currentBlock.length * currentMinParticipants;
-                if (score > maxScore) {
-                    maxScore = score;
-                    bestBlock = {
-                        day: dayNames[dayIndex],
-                        startTime: currentBlock[0].time,
-                        endTime: currentBlock[currentBlock.length - 1].time,
-                        duration: currentBlock.length * 15,
-                        minParticipants: currentMinParticipants,
-                        slots: currentBlock.length
-                    };
-                }
+                allBlocks.push({
+                    day: dayNames[dayIndex],
+                    startTime: currentBlock[0].time,
+                    endTime: currentBlock[currentBlock.length - 1].time,
+                    duration: currentBlock.length * 15,
+                    minParticipants: currentMinParticipants,
+                    slots: currentBlock.length,
+                    score: score
+                });
             }
         });
 
-        return bestBlock;
+        // Sort by score (duration * participants) and return top 3
+        return allBlocks
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 3);
     }
 
     renderSuggestions(suggestions) {
         const suggestionsList = document.getElementById('suggestionsList');
         suggestionsList.innerHTML = '';
 
-        if (!suggestions) {
+        if (!suggestions || (!suggestions.bestSingle.length && !suggestions.longestBlock.length)) {
             suggestionsList.innerHTML = '<div class="suggestion-item">No availability overlap found yet.</div>';
             return;
         }
 
-        // Best single time slot
-        if (suggestions.bestSingle) {
-            const bestItem = document.createElement('div');
-            bestItem.className = 'suggestion-item';
-            bestItem.innerHTML = `
-                <div class="suggestion-label">Best Single Time</div>
-                ${suggestions.bestSingle.day} at ${suggestions.bestSingle.time}<br>
-                ${suggestions.bestSingle.availableCount} people available (${suggestions.bestSingle.percentage}%)
-            `;
-            suggestionsList.appendChild(bestItem);
+        // Best single time slots
+        if (suggestions.bestSingle && suggestions.bestSingle.length > 0) {
+            const bestSlotsContainer = document.createElement('div');
+            bestSlotsContainer.innerHTML = '<div class="suggestion-label">Best Single Times</div>';
+            
+            suggestions.bestSingle.forEach((slot, index) => {
+                const bestItem = document.createElement('div');
+                bestItem.className = 'suggestion-item';
+                bestItem.innerHTML = `
+                    ${index + 1}. ${slot.day} at ${slot.time}<br>
+                    <span style="font-size: 0.8em; color: #666;">${slot.availableCount} people available (${slot.percentage}%)</span>
+                `;
+                bestSlotsContainer.appendChild(bestItem);
+            });
+            
+            suggestionsList.appendChild(bestSlotsContainer);
         }
 
-        // Longest consecutive block
-        if (suggestions.longestBlock) {
-            const blockItem = document.createElement('div');
-            blockItem.className = 'suggestion-item';
-            const hours = Math.floor(suggestions.longestBlock.duration / 60);
-            const minutes = suggestions.longestBlock.duration % 60;
-            const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+        // Longest consecutive blocks
+        if (suggestions.longestBlock && suggestions.longestBlock.length > 0) {
+            const blocksContainer = document.createElement('div');
+            blocksContainer.innerHTML = '<div class="suggestion-label">Best Time Blocks</div>';
+            blocksContainer.style.marginTop = '20px';
             
-            blockItem.innerHTML = `
-                <div class="suggestion-label">Longest Available Block</div>
-                ${suggestions.longestBlock.day} from ${suggestions.longestBlock.startTime} to ${suggestions.longestBlock.endTime}<br>
-                ${durationText} with ${suggestions.longestBlock.minParticipants} people available
-            `;
-            suggestionsList.appendChild(blockItem);
+            suggestions.longestBlock.forEach((block, index) => {
+                const blockItem = document.createElement('div');
+                blockItem.className = 'suggestion-item';
+                const hours = Math.floor(block.duration / 60);
+                const minutes = block.duration % 60;
+                const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                
+                blockItem.innerHTML = `
+                    ${index + 1}. ${block.day} from ${block.startTime} to ${block.endTime}<br>
+                    <span style="font-size: 0.8em; color: #666;">${durationText} with ${block.minParticipants} people available</span>
+                `;
+                blocksContainer.appendChild(blockItem);
+            });
+            
+            suggestionsList.appendChild(blocksContainer);
         }
     }
 
