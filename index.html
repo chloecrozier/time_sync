@@ -28,6 +28,14 @@
                 </div>
 
                 <div class="form-group">
+                    <label>Schedule Type</label>
+                    <div class="schedule-type-selector">
+                        <button class="type-btn active" id="generalDaysBtn">General Days</button>
+                        <button class="type-btn" id="specificDatesBtn">Specific Dates</button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="generalDaysGroup">
                     <label>Select Days</label>
                     <div class="days-selector">
                         <button class="day-btn" data-day="0">Sun</button>
@@ -38,6 +46,21 @@
                         <button class="day-btn" data-day="5">Fri</button>
                         <button class="day-btn" data-day="6">Sat</button>
                     </div>
+                </div>
+
+                <div class="form-group" id="specificDatesGroup" style="display: none;">
+                    <label>Select Date Range (Max 7 days)</label>
+                    <div class="date-range-group">
+                        <div class="date-input-group">
+                            <label for="startDate">Start Date</label>
+                            <input type="date" id="startDate" />
+                        </div>
+                        <div class="date-input-group">
+                            <label for="endDate">End Date</label>
+                            <input type="date" id="endDate" />
+                        </div>
+                    </div>
+                    <div class="selected-dates" id="selectedDates"></div>
                 </div>
 
                 <div class="time-range-group">

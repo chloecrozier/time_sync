@@ -107,11 +107,92 @@ body {
     font-weight: 300;
 }
 
+.schedule-type-selector {
+    display: flex;
+    gap: 2px;
+    background: #f1f3f4;
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.type-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 400;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    color: #495057;
+}
+
+.type-btn.active {
+    background: white;
+    color: #212529;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.type-btn:hover:not(.active) {
+    background: #e9ecef;
+}
+
 .days-selector {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 1px;
     border: 1px solid #e8e8e8;
+}
+
+.date-range-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.date-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.date-input-group label {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    color: #495057;
+}
+
+.date-input-group input[type="date"] {
+    padding: 10px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s ease;
+}
+
+.date-input-group input[type="date"]:focus {
+    outline: none;
+    border-color: #495057;
+    box-shadow: 0 0 0 2px rgba(73, 80, 87, 0.1);
+}
+
+.selected-dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.selected-date-chip {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid #bbdefb;
 }
 
 .day-btn {
@@ -500,9 +581,14 @@ body {
         padding: 25px 20px;
     }
     
-    .time-range-group {
+    .time-range-group, .date-range-group {
         grid-template-columns: 1fr;
         gap: 15px;
+    }
+    
+    .schedule-type-selector {
+        flex-direction: column;
+        gap: 8px;
     }
     
     .days-selector {

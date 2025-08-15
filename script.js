@@ -1,6 +1,8 @@
 class TimeSync {
     constructor() {
         this.selectedDays = new Set();
+        this.selectedDates = [];
+        this.isDateMode = false;
         this.currentPoll = null;
         this.userAvailability = {};
         this.allAvailability = {};
@@ -41,6 +43,15 @@ class TimeSync {
     }
 
     bindEvents() {
+        // Schedule type toggle
+        document.getElementById('generalDaysBtn').addEventListener('click', () => {
+            this.switchToGeneralDays();
+        });
+
+        document.getElementById('specificDatesBtn').addEventListener('click', () => {
+            this.switchToSpecificDates();
+        });
+
         // Day selection
         document.querySelectorAll('.day-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -53,6 +64,15 @@ class TimeSync {
                     e.target.classList.add('selected');
                 }
             });
+        });
+
+        // Date range selection
+        document.getElementById('startDate').addEventListener('change', () => {
+            this.updateDateRange();
+        });
+
+        document.getElementById('endDate').addEventListener('change', () => {
+            this.updateDateRange();
         });
 
         // Create poll
@@ -88,6 +108,91 @@ class TimeSync {
         });
     }
 
+    switchToGeneralDays() {
+        this.isDateMode = false;
+        document.getElementById('generalDaysBtn').classList.add('active');
+        document.getElementById('specificDatesBtn').classList.remove('active');
+        document.getElementById('generalDaysGroup').style.display = 'block';
+        document.getElementById('specificDatesGroup').style.display = 'none';
+    }
+
+    switchToSpecificDates() {
+        this.isDateMode = true;
+        document.getElementById('specificDatesBtn').classList.add('active');
+        document.getElementById('generalDaysBtn').classList.remove('active');
+        document.getElementById('specificDatesGroup').style.display = 'block';
+        document.getElementById('generalDaysGroup').style.display = 'none';
+        
+        // Set default start date to today
+        const today = new Date();
+        document.getElementById('startDate').value = today.toISOString().split('T')[0];
+        
+        // Set default end date to 6 days from today
+        const endDate = new Date(today);
+        endDate.setDate(today.getDate() + 6);
+        document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+        
+        this.updateDateRange();
+    }
+
+    updateDateRange() {
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        
+        if (!startDateInput.value || !endDateInput.value) {
+            this.selectedDates = [];
+            this.updateSelectedDatesDisplay();
+            return;
+        }
+
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+        
+        // Validate date range
+        if (endDate < startDate) {
+            this.showToast('End date must be after start date');
+            endDateInput.value = startDateInput.value;
+            return;
+        }
+
+        // Check if range is more than 7 days
+        const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        if (daysDiff > 7) {
+            this.showToast('Date range cannot exceed 7 days');
+            const maxEndDate = new Date(startDate);
+            maxEndDate.setDate(startDate.getDate() + 6);
+            endDateInput.value = maxEndDate.toISOString().split('T')[0];
+            return;
+        }
+
+        // Generate date array
+        this.selectedDates = [];
+        const currentDate = new Date(startDate);
+        
+        while (currentDate <= endDate) {
+            this.selectedDates.push(new Date(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        this.updateSelectedDatesDisplay();
+    }
+
+    updateSelectedDatesDisplay() {
+        const container = document.getElementById('selectedDates');
+        container.innerHTML = '';
+        
+        this.selectedDates.forEach(date => {
+            const chip = document.createElement('div');
+            chip.className = 'selected-date-chip';
+            chip.textContent = date.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            container.appendChild(chip);
+        });
+    }
+
     createPoll() {
         const title = document.getElementById('pollTitle').value.trim();
         const startTime = document.getElementById('startTime').value;
@@ -98,9 +203,17 @@ class TimeSync {
             return;
         }
 
-        if (this.selectedDays.size === 0) {
-            this.showToast('Please select at least one day');
-            return;
+        // Validate selection based on mode
+        if (this.isDateMode) {
+            if (this.selectedDates.length === 0) {
+                this.showToast('Please select a date range');
+                return;
+            }
+        } else {
+            if (this.selectedDays.size === 0) {
+                this.showToast('Please select at least one day');
+                return;
+            }
         }
 
         if (startTime >= endTime) {
@@ -111,7 +224,9 @@ class TimeSync {
         this.currentPoll = {
             id: this.generateId(),
             title,
-            days: Array.from(this.selectedDays).sort(),
+            isDateMode: this.isDateMode,
+            days: this.isDateMode ? [] : Array.from(this.selectedDays).sort(),
+            dates: this.isDateMode ? this.selectedDates.map(d => d.toISOString().split('T')[0]) : [],
             startTime,
             endTime,
             createdAt: new Date().toISOString(),
@@ -140,17 +255,36 @@ class TimeSync {
 
     renderDaysHeader() {
         const daysHeader = document.getElementById('daysHeader');
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        
         daysHeader.innerHTML = '';
-        daysHeader.style.gridTemplateColumns = `repeat(${this.currentPoll.days.length}, 1fr)`;
         
-        this.currentPoll.days.forEach(dayIndex => {
-            const dayHeader = document.createElement('div');
-            dayHeader.className = 'day-header';
-            dayHeader.textContent = dayNames[dayIndex];
-            daysHeader.appendChild(dayHeader);
-        });
+        if (this.currentPoll.isDateMode) {
+            // Show specific dates
+            const dates = this.currentPoll.dates.map(dateStr => new Date(dateStr));
+            daysHeader.style.gridTemplateColumns = `repeat(${dates.length}, 1fr)`;
+            
+            dates.forEach(date => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.innerHTML = `
+                    <div style="font-size: 0.75em; line-height: 1.2;">
+                        ${date.toLocaleDateString('en-US', { weekday: 'short' })}<br>
+                        ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </div>
+                `;
+                daysHeader.appendChild(dayHeader);
+            });
+        } else {
+            // Show general days
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            daysHeader.style.gridTemplateColumns = `repeat(${this.currentPoll.days.length}, 1fr)`;
+            
+            this.currentPoll.days.forEach(dayIndex => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.textContent = dayNames[dayIndex];
+                daysHeader.appendChild(dayHeader);
+            });
+        }
     }
 
     renderAvailabilityGrid() {
@@ -169,28 +303,55 @@ class TimeSync {
             
             const timeSlotsContainer = document.createElement('div');
             timeSlotsContainer.className = 'time-slots';
-            timeSlotsContainer.style.gridTemplateColumns = `repeat(${this.currentPoll.days.length}, 1fr)`;
             
-            this.currentPoll.days.forEach(dayIndex => {
-                const slot = document.createElement('div');
-                slot.className = 'time-slot';
-                slot.dataset.day = dayIndex;
-                slot.dataset.time = time;
+            if (this.currentPoll.isDateMode) {
+                timeSlotsContainer.style.gridTemplateColumns = `repeat(${this.currentPoll.dates.length}, 1fr)`;
                 
-                slot.addEventListener('click', () => {
-                    if (this.currentUser) {
-                        this.toggleAvailability(dayIndex, time);
-                    } else {
-                        this.showToast('Please enter your name first');
-                    }
+                this.currentPoll.dates.forEach((dateStr, index) => {
+                    const slot = document.createElement('div');
+                    slot.className = 'time-slot';
+                    slot.dataset.day = `date-${index}`;
+                    slot.dataset.date = dateStr;
+                    slot.dataset.time = time;
+                    
+                    slot.addEventListener('click', () => {
+                        if (this.currentUser) {
+                            this.toggleAvailability(`date-${index}`, time);
+                        } else {
+                            this.showToast('Please enter your name first');
+                        }
+                    });
+                    
+                    const participantsDiv = document.createElement('div');
+                    participantsDiv.className = 'time-slot-participants';
+                    slot.appendChild(participantsDiv);
+                    
+                    timeSlotsContainer.appendChild(slot);
                 });
+            } else {
+                timeSlotsContainer.style.gridTemplateColumns = `repeat(${this.currentPoll.days.length}, 1fr)`;
                 
-                const participantsDiv = document.createElement('div');
-                participantsDiv.className = 'time-slot-participants';
-                slot.appendChild(participantsDiv);
-                
-                timeSlotsContainer.appendChild(slot);
-            });
+                this.currentPoll.days.forEach(dayIndex => {
+                    const slot = document.createElement('div');
+                    slot.className = 'time-slot';
+                    slot.dataset.day = dayIndex;
+                    slot.dataset.time = time;
+                    
+                    slot.addEventListener('click', () => {
+                        if (this.currentUser) {
+                            this.toggleAvailability(dayIndex, time);
+                        } else {
+                            this.showToast('Please enter your name first');
+                        }
+                    });
+                    
+                    const participantsDiv = document.createElement('div');
+                    participantsDiv.className = 'time-slot-participants';
+                    slot.appendChild(participantsDiv);
+                    
+                    timeSlotsContainer.appendChild(slot);
+                });
+            }
             
             timeRow.appendChild(timeLabel);
             timeRow.appendChild(timeSlotsContainer);
@@ -367,24 +528,47 @@ class TimeSync {
         const slotAvailability = [];
         
         timeSlots.forEach(time => {
-            this.currentPoll.days.forEach(dayIndex => {
-                const key = `${dayIndex}-${time}`;
-                const availableUsers = Object.keys(this.allAvailability).filter(user => 
-                    this.allAvailability[user][key]
-                );
-                
-                if (availableUsers.length > 0) {
-                    slotAvailability.push({
-                        day: dayNames[dayIndex],
-                        time: this.formatTimeForDisplay(time),
-                        timeKey: time,
-                        dayIndex: dayIndex,
-                        availableCount: availableUsers.length,
-                        percentage: Math.round((availableUsers.length / totalParticipants) * 100),
-                        users: availableUsers
-                    });
-                }
-            });
+            if (this.currentPoll.isDateMode) {
+                this.currentPoll.dates.forEach((dateStr, index) => {
+                    const key = `date-${index}-${time}`;
+                    const availableUsers = Object.keys(this.allAvailability).filter(user => 
+                        this.allAvailability[user][key]
+                    );
+                    
+                    if (availableUsers.length > 0) {
+                        const date = new Date(dateStr);
+                        const dayName = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                        slotAvailability.push({
+                            day: dayName,
+                            time: this.formatTimeForDisplay(time),
+                            timeKey: time,
+                            dayIndex: `date-${index}`,
+                            availableCount: availableUsers.length,
+                            percentage: Math.round((availableUsers.length / totalParticipants) * 100),
+                            users: availableUsers
+                        });
+                    }
+                });
+            } else {
+                this.currentPoll.days.forEach(dayIndex => {
+                    const key = `${dayIndex}-${time}`;
+                    const availableUsers = Object.keys(this.allAvailability).filter(user => 
+                        this.allAvailability[user][key]
+                    );
+                    
+                    if (availableUsers.length > 0) {
+                        slotAvailability.push({
+                            day: dayNames[dayIndex],
+                            time: this.formatTimeForDisplay(time),
+                            timeKey: time,
+                            dayIndex: dayIndex,
+                            availableCount: availableUsers.length,
+                            percentage: Math.round((availableUsers.length / totalParticipants) * 100),
+                            users: availableUsers
+                        });
+                    }
+                });
+            }
         });
 
         if (slotAvailability.length === 0) {
@@ -593,17 +777,34 @@ class TimeSync {
         
         // For each time slot, find who's available
         timeSlots.forEach(time => {
-            this.currentPoll.days.forEach(dayIndex => {
-                const key = `${dayIndex}-${time}`;
-                const availableUsers = Object.keys(this.allAvailability).filter(user => 
-                    this.allAvailability[user][key]
-                );
-                
-                if (availableUsers.length > 0) {
-                    const displayTime = this.formatTimeForDisplay(time);
-                    schedule[dayNames[dayIndex]][displayTime] = availableUsers;
-                }
-            });
+            if (this.currentPoll.isDateMode) {
+                this.currentPoll.dates.forEach((dateStr, index) => {
+                    const key = `date-${index}-${time}`;
+                    const availableUsers = Object.keys(this.allAvailability).filter(user => 
+                        this.allAvailability[user][key]
+                    );
+                    
+                    if (availableUsers.length > 0) {
+                        const date = new Date(dateStr);
+                        const dayName = date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+                        const displayTime = this.formatTimeForDisplay(time);
+                        if (!schedule[dayName]) schedule[dayName] = {};
+                        schedule[dayName][displayTime] = availableUsers;
+                    }
+                });
+            } else {
+                this.currentPoll.days.forEach(dayIndex => {
+                    const key = `${dayIndex}-${time}`;
+                    const availableUsers = Object.keys(this.allAvailability).filter(user => 
+                        this.allAvailability[user][key]
+                    );
+                    
+                    if (availableUsers.length > 0) {
+                        const displayTime = this.formatTimeForDisplay(time);
+                        schedule[dayNames[dayIndex]][displayTime] = availableUsers;
+                    }
+                });
+            }
         });
         
         return schedule;
