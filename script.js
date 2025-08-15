@@ -10,6 +10,7 @@ class TimeSync {
         
         this.initializeTimeOptions();
         this.bindEvents();
+        this.initializeTheme();
         this.loadPollFromURL();
     }
 
@@ -73,6 +74,11 @@ class TimeSync {
 
         document.getElementById('endDate').addEventListener('change', () => {
             this.updateDateRange();
+        });
+
+        // Theme toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            this.toggleTheme();
         });
 
         // Create poll
@@ -907,6 +913,33 @@ class TimeSync {
         setTimeout(() => {
             toast.classList.remove('show');
         }, 3000);
+    }
+
+    initializeTheme() {
+        // Check for saved theme preference or default to light mode
+        const savedTheme = localStorage.getItem('timesync-theme') || 'light';
+        this.setTheme(savedTheme);
+    }
+
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        this.setTheme(newTheme);
+    }
+
+    setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('timesync-theme', theme);
+        
+        // Update theme toggle icon
+        const themeIcon = document.querySelector('.theme-icon');
+        themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        
+        // Add a subtle animation to the icon
+        themeIcon.style.transform = 'scale(0.8)';
+        setTimeout(() => {
+            themeIcon.style.transform = 'scale(1)';
+        }, 150);
     }
 }
 
