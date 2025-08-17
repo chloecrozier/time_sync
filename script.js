@@ -7,11 +7,14 @@ class TimeSync {
         this.userAvailability = {};
         this.allAvailability = {};
         this.currentUser = null;
+        this.isDragging = false;
+        this.dragMode = null; // 'select' or 'deselect'
         
         this.initializeTimeOptions();
         this.bindEvents();
         this.initializeTheme();
         this.loadPollFromURL();
+        this.setupKeyboardNavigation();
     }
 
     initializeTimeOptions() {
@@ -41,6 +44,21 @@ class TimeSync {
         const period = hour >= 12 ? 'PM' : 'AM';
         const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
         return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+    }
+
+    timeToMinutes(timeString) {
+        const [hours, minutes] = timeString.split(':').map(Number);
+        return hours * 60 + minutes;
+    }
+
+    setupKeyboardNavigation() {
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.currentUser = null;
+                this.updateGridDisplay();
+                this.showToast('Deselected current user');
+            }
+        });
     }
 
     bindEvents() {
@@ -131,12 +149,23 @@ class TimeSync {
         
         // Set default start date to today
         const today = new Date();
-        document.getElementById('startDate').value = today.toISOString().split('T')[0];
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
         
-        // Set default end date to 6 days from today
-        const endDate = new Date(today);
-        endDate.setDate(today.getDate() + 6);
-        document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+        // Set minimum date to today to prevent past dates
+        startDateInput.min = today.toISOString().split('T')[0];
+        endDateInput.min = today.toISOString().split('T')[0];
+        
+        if (!startDateInput.value) {
+            startDateInput.value = today.toISOString().split('T')[0];
+        }
+        
+        if (!endDateInput.value) {
+            // Set default end date to 6 days from today
+            const endDate = new Date(today);
+            endDate.setDate(today.getDate() + 6);
+            endDateInput.value = endDate.toISOString().split('T')[0];
+        }
         
         this.updateDateRange();
     }
@@ -151,8 +180,17 @@ class TimeSync {
             return;
         }
 
-        const startDate = new Date(startDateInput.value);
-        const endDate = new Date(endDateInput.value);
+        const startDate = new Date(startDateInput.value + 'T00:00:00');
+        const endDate = new Date(endDateInput.value + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Validate dates are not in the past
+        if (startDate < today) {
+            this.showToast('Start date cannot be in the past');
+            startDateInput.value = today.toISOString().split('T')[0];
+            return;
+        }
         
         // Validate date range
         if (endDate < startDate) {
@@ -204,8 +242,16 @@ class TimeSync {
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
 
+        // Enhanced validation
         if (!title) {
             this.showToast('Please enter a poll title');
+            document.getElementById('pollTitle').focus();
+            return;
+        }
+
+        if (title.length > 100) {
+            this.showToast('Poll title must be 100 characters or less');
+            document.getElementById('pollTitle').focus();
             return;
         }
 
@@ -213,6 +259,7 @@ class TimeSync {
         if (this.isDateMode) {
             if (this.selectedDates.length === 0) {
                 this.showToast('Please select a date range');
+                document.getElementById('startDate').focus();
                 return;
             }
         } else {
@@ -224,6 +271,15 @@ class TimeSync {
 
         if (startTime >= endTime) {
             this.showToast('End time must be after start time');
+            document.getElementById('endTime').focus();
+            return;
+        }
+
+        // Check for reasonable time range (at least 30 minutes)
+        const startMinutes = this.timeToMinutes(startTime);
+        const endMinutes = this.timeToMinutes(endTime);
+        if (endMinutes - startMinutes < 30) {
+            this.showToast('Time range must be at least 30 minutes');
             return;
         }
 
@@ -250,8 +306,14 @@ class TimeSync {
         document.getElementById('pollDisplay').style.display = 'block';
         
         document.getElementById('pollTitleDisplay').textContent = this.currentPoll.title;
-        document.getElementById('currentTimezone').textContent = 
-            `Your timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const creatorTimezone = this.currentPoll.creatorTimezone || userTimezone;
+        
+        let timezoneText = `Your timezone: ${userTimezone}`;
+        if (userTimezone !== creatorTimezone) {
+            timezoneText += ` (Poll created in ${creatorTimezone})`;
+        }
+        document.getElementById('currentTimezone').textContent = timezoneText;
 
         this.renderDaysHeader();
         this.renderAvailabilityGrid();
@@ -320,6 +382,22 @@ class TimeSync {
                     slot.dataset.date = dateStr;
                     slot.dataset.time = time;
                     
+                    // Add drag functionality
+                    slot.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        if (this.currentUser) {
+                            this.startDrag(`date-${index}`, time);
+                        } else {
+                            this.showToast('Please enter your name first');
+                        }
+                    });
+                    
+                    slot.addEventListener('mouseenter', () => {
+                        if (this.isDragging && this.currentUser) {
+                            this.handleDrag(`date-${index}`, time);
+                        }
+                    });
+                    
                     slot.addEventListener('click', () => {
                         if (this.currentUser) {
                             this.toggleAvailability(`date-${index}`, time);
@@ -342,6 +420,22 @@ class TimeSync {
                     slot.className = 'time-slot';
                     slot.dataset.day = dayIndex;
                     slot.dataset.time = time;
+                    
+                    // Add drag functionality
+                    slot.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        if (this.currentUser) {
+                            this.startDrag(dayIndex, time);
+                        } else {
+                            this.showToast('Please enter your name first');
+                        }
+                    });
+                    
+                    slot.addEventListener('mouseenter', () => {
+                        if (this.isDragging && this.currentUser) {
+                            this.handleDrag(dayIndex, time);
+                        }
+                    });
                     
                     slot.addEventListener('click', () => {
                         if (this.currentUser) {
@@ -399,7 +493,22 @@ class TimeSync {
         
         if (!name) {
             this.showToast('Please enter your name');
+            nameInput.focus();
             return;
+        }
+
+        if (name.length > 50) {
+            this.showToast('Name must be 50 characters or less');
+            nameInput.focus();
+            return;
+        }
+
+        // Check for duplicate names
+        if (this.allAvailability[name] && Object.keys(this.allAvailability[name]).length > 0) {
+            if (!confirm(`User "${name}" already exists. Do you want to edit their availability?`)) {
+                nameInput.focus();
+                return;
+            }
         }
 
         this.currentUser = name;
@@ -415,7 +524,7 @@ class TimeSync {
         this.renderParticipants();
         this.updateSuggestions();
         this.savePollToStorage();
-        this.showToast(`Welcome, ${name}! Click on time slots to mark your availability.`);
+        this.showToast(`Welcome, ${name}! Click and drag to mark your availability.`);
     }
 
     toggleAvailability(day, time) {
@@ -436,6 +545,40 @@ class TimeSync {
         this.updateGridDisplay();
         this.updateSuggestions();
         this.savePollToStorage();
+    }
+
+    startDrag(day, time) {
+        this.isDragging = true;
+        const key = `${day}-${time}`;
+        const isCurrentlySelected = this.allAvailability[this.currentUser] && 
+                                   this.allAvailability[this.currentUser][key];
+        this.dragMode = isCurrentlySelected ? 'deselect' : 'select';
+        this.toggleAvailability(day, time);
+        
+        // Add global mouse events
+        document.addEventListener('mouseup', this.endDrag.bind(this));
+        document.addEventListener('mouseleave', this.endDrag.bind(this));
+    }
+
+    handleDrag(day, time) {
+        if (!this.isDragging || !this.currentUser) return;
+        
+        const key = `${day}-${time}`;
+        const isCurrentlySelected = this.allAvailability[this.currentUser] && 
+                                   this.allAvailability[this.currentUser][key];
+        
+        if (this.dragMode === 'select' && !isCurrentlySelected) {
+            this.toggleAvailability(day, time);
+        } else if (this.dragMode === 'deselect' && isCurrentlySelected) {
+            this.toggleAvailability(day, time);
+        }
+    }
+
+    endDrag() {
+        this.isDragging = false;
+        this.dragMode = null;
+        document.removeEventListener('mouseup', this.endDrag.bind(this));
+        document.removeEventListener('mouseleave', this.endDrag.bind(this));
     }
 
     updateGridDisplay() {
@@ -685,21 +828,23 @@ class TimeSync {
         suggestionsList.innerHTML = '';
 
         if (!suggestions || (!suggestions.bestSingle.length && !suggestions.longestBlock.length)) {
-            suggestionsList.innerHTML = '<div class="suggestion-item">No availability overlap found yet.</div>';
+            suggestionsList.innerHTML = '<div class="suggestion-item">No availability overlap found yet. Add more participants to see suggestions.</div>';
             return;
         }
 
         // Best single time slots
         if (suggestions.bestSingle && suggestions.bestSingle.length > 0) {
             const bestSlotsContainer = document.createElement('div');
-            bestSlotsContainer.innerHTML = '<div class="suggestion-label">Best Single Times</div>';
+            bestSlotsContainer.innerHTML = '<div class="suggestion-label">🏆 Best Single Times</div>';
             
             suggestions.bestSingle.forEach((slot, index) => {
                 const bestItem = document.createElement('div');
                 bestItem.className = 'suggestion-item';
+                const emoji = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
                 bestItem.innerHTML = `
-                    ${index + 1}. ${slot.day} at ${slot.time}<br>
+                    ${emoji} ${slot.day} at ${slot.time}<br>
                     <span style="font-size: 0.8em; color: #666;">${slot.availableCount} people available (${slot.percentage}%)</span>
+                    <div style="font-size: 0.75em; color: #888; margin-top: 4px;">Available: ${slot.users.join(', ')}</div>
                 `;
                 bestSlotsContainer.appendChild(bestItem);
             });
@@ -710,7 +855,7 @@ class TimeSync {
         // Longest consecutive blocks
         if (suggestions.longestBlock && suggestions.longestBlock.length > 0) {
             const blocksContainer = document.createElement('div');
-            blocksContainer.innerHTML = '<div class="suggestion-label">Best Time Blocks</div>';
+            blocksContainer.innerHTML = '<div class="suggestion-label">⏰ Best Time Blocks</div>';
             blocksContainer.style.marginTop = '20px';
             
             suggestions.longestBlock.forEach((block, index) => {
@@ -719,9 +864,10 @@ class TimeSync {
                 const hours = Math.floor(block.duration / 60);
                 const minutes = block.duration % 60;
                 const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                const emoji = index === 0 ? '🏆' : index === 1 ? '⭐' : '✨';
                 
                 blockItem.innerHTML = `
-                    ${index + 1}. ${block.day} from ${block.startTime} to ${block.endTime}<br>
+                    ${emoji} ${block.day} from ${block.startTime} to ${block.endTime}<br>
                     <span style="font-size: 0.8em; color: #666;">${durationText} with ${block.minParticipants} people available</span>
                 `;
                 blocksContainer.appendChild(blockItem);
@@ -734,39 +880,74 @@ class TimeSync {
     sharePoll() {
         const url = window.location.href;
         
-        if (navigator.share) {
+        if (navigator.share && navigator.canShare && navigator.canShare({ url })) {
             navigator.share({
                 title: this.currentPoll.title,
                 text: 'Join my scheduling poll on TimeSync',
                 url: url
+            }).catch((error) => {
+                console.error('Share failed:', error);
+                this.copyUrlToClipboard(url);
             });
         } else {
+            this.copyUrlToClipboard(url);
+        }
+    }
+
+    copyUrlToClipboard(url) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url).then(() => {
                 this.showToast('Poll URL copied to clipboard');
             }).catch(() => {
-                this.showToast('Unable to copy URL. Please copy manually from address bar.');
+                this.fallbackCopy(url);
             });
+        } else {
+            this.fallbackCopy(url);
         }
     }
 
     copyCalendarLink() {
         if (!this.currentPoll) return;
         
-        const calendarData = this.generateCalendarSchedule();
-        const calendarText = this.formatCalendarText(calendarData);
-        
-        navigator.clipboard.writeText(calendarText).then(() => {
-            this.showToast('Calendar schedule copied to clipboard');
-        }).catch(() => {
-            // Fallback: create a text area and copy manually
+        try {
+            const calendarData = this.generateCalendarSchedule();
+            const calendarText = this.formatCalendarText(calendarData);
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(calendarText).then(() => {
+                    this.showToast('Calendar schedule copied to clipboard');
+                }).catch(() => {
+                    this.fallbackCopy(calendarText);
+                });
+            } else {
+                this.fallbackCopy(calendarText);
+            }
+        } catch (error) {
+            console.error('Error generating calendar:', error);
+            this.showToast('Error generating calendar data');
+        }
+    }
+
+    fallbackCopy(text) {
+        try {
             const textArea = document.createElement('textarea');
-            textArea.value = calendarText;
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
             document.body.appendChild(textArea);
             textArea.select();
-            document.execCommand('copy');
+            const successful = document.execCommand('copy');
             document.body.removeChild(textArea);
-            this.showToast('Calendar schedule copied to clipboard');
-        });
+            
+            if (successful) {
+                this.showToast('Calendar schedule copied to clipboard');
+            } else {
+                this.showToast('Could not copy to clipboard. Please copy manually.');
+            }
+        } catch (error) {
+            console.error('Fallback copy failed:', error);
+            this.showToast('Copy failed. Please copy the URL manually.');
+        }
     }
 
     generateCalendarSchedule() {
@@ -847,21 +1028,39 @@ class TimeSync {
 
     savePollToStorage() {
         if (this.currentPoll) {
-            const pollData = {
-                poll: this.currentPoll,
-                availability: this.allAvailability
-            };
-            localStorage.setItem(`timesync_poll_${this.currentPoll.id}`, JSON.stringify(pollData));
+            try {
+                const pollData = {
+                    poll: this.currentPoll,
+                    availability: this.allAvailability,
+                    lastModified: new Date().toISOString()
+                };
+                localStorage.setItem(`timesync_poll_${this.currentPoll.id}`, JSON.stringify(pollData));
+            } catch (error) {
+                console.error('Failed to save poll data:', error);
+                this.showToast('Warning: Could not save data locally');
+            }
         }
     }
 
     loadPollFromStorage(pollId) {
-        const stored = localStorage.getItem(`timesync_poll_${pollId}`);
-        if (stored) {
-            const data = JSON.parse(stored);
-            this.currentPoll = data.poll;
-            this.allAvailability = data.availability || {};
-            return true;
+        try {
+            const stored = localStorage.getItem(`timesync_poll_${pollId}`);
+            if (stored) {
+                const data = JSON.parse(stored);
+                
+                // Validate poll data structure
+                if (!data.poll || !data.poll.id || !data.poll.title) {
+                    console.error('Invalid poll data structure');
+                    return false;
+                }
+                
+                this.currentPoll = data.poll;
+                this.allAvailability = data.availability || {};
+                return true;
+            }
+        } catch (error) {
+            console.error('Failed to load poll data:', error);
+            this.showToast('Error loading poll data');
         }
         return false;
     }
@@ -870,8 +1069,17 @@ class TimeSync {
         const urlParams = new URLSearchParams(window.location.search);
         const pollId = urlParams.get('poll');
         
-        if (pollId && this.loadPollFromStorage(pollId)) {
-            this.displayPoll();
+        if (pollId) {
+            if (this.loadPollFromStorage(pollId)) {
+                this.displayPoll();
+                this.showToast('Poll loaded successfully!');
+            } else {
+                this.showToast('Poll not found. It may have been deleted or the link is invalid.', 5000, 'error');
+                // Clean up the URL
+                const url = new URL(window.location);
+                url.searchParams.delete('poll');
+                window.history.replaceState({}, '', url);
+            }
         }
     }
 
@@ -884,16 +1092,31 @@ class TimeSync {
     }
 
     resetApp() {
+        // Confirm if there's existing data
+        if (this.currentPoll && Object.keys(this.allAvailability).length > 0) {
+            if (!confirm('Are you sure you want to create a new poll? This will clear all current data.')) {
+                return;
+            }
+        }
+        
         this.selectedDays.clear();
+        this.selectedDates = [];
         this.currentPoll = null;
         this.userAvailability = {};
         this.allAvailability = {};
         this.currentUser = null;
+        this.isDragging = false;
+        this.dragMode = null;
         
         document.getElementById('pollCreator').style.display = 'block';
         document.getElementById('pollDisplay').style.display = 'none';
         document.getElementById('pollTitle').value = '';
         document.getElementById('userName').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        
+        // Reset to general days mode
+        this.switchToGeneralDays();
         
         document.querySelectorAll('.day-btn').forEach(btn => {
             btn.classList.remove('selected');
@@ -903,16 +1126,40 @@ class TimeSync {
         const url = new URL(window.location);
         url.searchParams.delete('poll');
         window.history.pushState({}, '', url);
+        
+        this.showToast('Ready to create a new poll!');
     }
 
-    showToast(message) {
+    showToast(message, duration = 3000, type = 'info') {
         const toast = document.getElementById('toast');
         toast.textContent = message;
+        toast.className = `toast ${type}`;
         toast.classList.add('show');
         
-        setTimeout(() => {
+        // Clear any existing timeout
+        if (this.toastTimeout) {
+            clearTimeout(this.toastTimeout);
+        }
+        
+        this.toastTimeout = setTimeout(() => {
             toast.classList.remove('show');
-        }, 3000);
+        }, duration);
+        
+        // Add accessibility announcement
+        this.announceToScreenReader(message);
+    }
+
+    announceToScreenReader(message) {
+        const announcement = document.createElement('div');
+        announcement.setAttribute('aria-live', 'polite');
+        announcement.setAttribute('aria-atomic', 'true');
+        announcement.className = 'sr-only';
+        announcement.textContent = message;
+        document.body.appendChild(announcement);
+        
+        setTimeout(() => {
+            document.body.removeChild(announcement);
+        }, 1000);
     }
 
     initializeTheme() {
