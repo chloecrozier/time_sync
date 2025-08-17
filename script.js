@@ -78,9 +78,11 @@ class TimeSync {
                 if (this.selectedDays.has(day)) {
                     this.selectedDays.delete(day);
                     e.target.classList.remove('selected');
+                    e.target.setAttribute('aria-pressed', 'false');
                 } else {
                     this.selectedDays.add(day);
                     e.target.classList.add('selected');
+                    e.target.setAttribute('aria-pressed', 'true');
                 }
             });
         });

@@ -193,6 +193,15 @@ body {
 .form-group input:focus, .form-group select:focus {
     outline: none;
     border-bottom-color: var(--accent-primary);
+    box-shadow: 0 2px 0 var(--accent-primary);
+}
+
+.form-group input:invalid {
+    border-bottom-color: #dc3545;
+}
+
+.form-group input:invalid:focus {
+    box-shadow: 0 2px 0 #dc3545;
 }
 
 .form-group input::placeholder {
@@ -237,7 +246,9 @@ body {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 1px;
-    border: 1px solid #e8e8e8;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .date-range-group {
@@ -260,16 +271,26 @@ body {
 
 .date-input-group input[type="date"] {
     padding: 10px 12px;
-    border: 1px solid #dee2e6;
+    border: 1px solid var(--border-secondary);
     border-radius: 6px;
     font-size: 0.9rem;
-    transition: border-color 0.2s ease;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
 }
 
 .date-input-group input[type="date"]:focus {
     outline: none;
-    border-color: #495057;
-    box-shadow: 0 0 0 2px rgba(73, 80, 87, 0.1);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.1);
+}
+
+.date-input-group input[type="date"]:invalid {
+    border-color: #dc3545;
+}
+
+[data-theme="dark"] .date-input-group input[type="date"] {
+    color-scheme: dark;
 }
 
 .selected-dates {
@@ -305,9 +326,15 @@ body {
     background: var(--hover-bg);
 }
 
+.day-btn:focus {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
 .day-btn.selected {
     background: var(--accent-primary);
     color: var(--bg-secondary);
+    font-weight: 500;
 }
 
 .time-range-group {
@@ -514,6 +541,10 @@ body {
     background: white;
     border-radius: 2px;
     margin: 1px;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .time-slot:last-child {
@@ -525,6 +556,16 @@ body {
     border-color: #90caf9;
     transform: scale(1.05);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.time-slot:focus {
+    outline: 2px solid #2196f3;
+    outline-offset: 2px;
+}
+
+.time-slot.dragging {
+    background: #bbdefb !important;
+    transform: scale(1.02);
 }
 
 .time-slot-participants {
@@ -638,14 +679,42 @@ body {
     padding: 16px 20px;
     font-weight: 300;
     font-size: 0.9rem;
+    border-radius: 8px;
     transform: translateX(100%);
     transition: transform 0.3s ease;
     z-index: 1000;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-width: 300px;
+    word-wrap: break-word;
 }
 
 .toast.show {
     transform: translateX(0);
+}
+
+.toast.error {
+    background: #dc3545;
+}
+
+.toast.success {
+    background: #28a745;
+}
+
+.toast.warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .new-poll-btn {
@@ -663,6 +732,18 @@ body {
 @media (max-width: 768px) {
     .container {
         padding: 15px 10px;
+    }
+    
+    .toast {
+        top: 20px;
+        right: 20px;
+        left: 20px;
+        transform: translateY(-100%);
+        max-width: none;
+    }
+    
+    .toast.show {
+        transform: translateY(0);
     }
     
     .title {
@@ -690,6 +771,12 @@ body {
     
     .days-selector {
         grid-template-columns: repeat(4, 1fr);
+        gap: 2px;
+    }
+    
+    .day-btn {
+        padding: 12px 6px;
+        font-size: 0.8rem;
     }
     
     .user-input-section {

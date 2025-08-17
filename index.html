@@ -29,7 +29,8 @@
 
                 <div class="form-group">
                     <label for="pollTitle">Poll Title</label>
-                    <input type="text" id="pollTitle" placeholder="e.g., Team Meeting This Week" />
+                    <input type="text" id="pollTitle" placeholder="e.g., Team Meeting This Week" maxlength="100" required aria-describedby="pollTitleHelp" />
+                    <div id="pollTitleHelp" class="sr-only">Enter a descriptive title for your scheduling poll</div>
                 </div>
 
                 <div class="form-group">
@@ -42,14 +43,14 @@
 
                 <div class="form-group" id="generalDaysGroup">
                     <label>Select Days</label>
-                    <div class="days-selector">
-                        <button class="day-btn" data-day="0">Sun</button>
-                        <button class="day-btn" data-day="1">Mon</button>
-                        <button class="day-btn" data-day="2">Tue</button>
-                        <button class="day-btn" data-day="3">Wed</button>
-                        <button class="day-btn" data-day="4">Thu</button>
-                        <button class="day-btn" data-day="5">Fri</button>
-                        <button class="day-btn" data-day="6">Sat</button>
+                    <div class="days-selector" role="group" aria-label="Select days of the week">
+                        <button class="day-btn" data-day="0" type="button" aria-pressed="false">Sun</button>
+                        <button class="day-btn" data-day="1" type="button" aria-pressed="false">Mon</button>
+                        <button class="day-btn" data-day="2" type="button" aria-pressed="false">Tue</button>
+                        <button class="day-btn" data-day="3" type="button" aria-pressed="false">Wed</button>
+                        <button class="day-btn" data-day="4" type="button" aria-pressed="false">Thu</button>
+                        <button class="day-btn" data-day="5" type="button" aria-pressed="false">Fri</button>
+                        <button class="day-btn" data-day="6" type="button" aria-pressed="false">Sat</button>
                     </div>
                 </div>
 
@@ -98,8 +99,9 @@
                 <div class="user-input-section">
                     <div class="form-group">
                         <label for="userName">Your Name</label>
-                        <input type="text" id="userName" placeholder="Enter your name to start marking availability" />
-                        <button id="addUserBtn">Start Marking</button>
+                        <input type="text" id="userName" placeholder="Enter your name to start marking availability" maxlength="50" required aria-describedby="userNameHelp" />
+                        <div id="userNameHelp" class="sr-only">Enter your name to start marking your availability on the schedule</div>
+                        <button id="addUserBtn" type="button">Start Marking</button>
                     </div>
                     <p class="instruction-text">After clicking "Start Marking", click on time slots below to mark when you're available</p>
                 </div>
@@ -109,7 +111,7 @@
                         <div class="time-column-header">Time</div>
                         <div class="days-header" id="daysHeader"></div>
                     </div>
-                    <div class="availability-grid" id="availabilityGrid"></div>
+                    <div class="availability-grid" id="availabilityGrid" role="grid" aria-label="Availability schedule - click and drag to mark your availability"></div>
                 </div>
 
                 <div class="suggestions-section" id="suggestionsSection" style="display: none;">
