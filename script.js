@@ -598,25 +598,21 @@ class TimeSync {
                 this.allAvailability[user][key]
             );
             
-            // Apply shading based on number of people available
+            // Simple, clean styling based on availability
             if (availableUsers.length > 0) {
-                const totalUsers = Object.keys(this.allAvailability).length;
-                const intensity = Math.min(availableUsers.length / Math.max(totalUsers, 1), 1);
-                
                 // Check if current user is available for this slot
                 const currentUserAvailable = this.currentUser && 
                     this.allAvailability[this.currentUser] && 
                     this.allAvailability[this.currentUser][key];
                 
                 if (currentUserAvailable) {
-                    // Current user's slots are black with varying opacity
-                    const opacity = 0.3 + (intensity * 0.7); // Range from 0.3 to 1.0
-                    slot.style.backgroundColor = `rgba(26, 26, 26, ${opacity})`;
-                    slot.classList.add('available');
+                    // Current user's slots - clean black fill
+                    slot.style.backgroundColor = 'var(--accent-primary)';
+                    slot.classList.add('available', 'current-user');
                 } else {
-                    // Other users' slots are light gray with varying opacity
-                    const opacity = 0.1 + (intensity * 0.3); // Range from 0.1 to 0.4
-                    slot.style.backgroundColor = `rgba(26, 26, 26, ${opacity})`;
+                    // Other users' slots - subtle gray
+                    slot.style.backgroundColor = 'var(--bg-quaternary)';
+                    slot.classList.add('others-available');
                 }
             }
             
@@ -625,23 +621,28 @@ class TimeSync {
             participantsDiv.innerHTML = '';
             
             availableUsers.forEach(user => {
-                const dot = document.createElement('div');
-                dot.className = 'participant-dot';
-                dot.title = user;
-                dot.style.backgroundColor = this.getUserColor(user);
-                participantsDiv.appendChild(dot);
+                const icon = document.createElement('span');
+                icon.className = 'participant-icon';
+                icon.title = user;
+                icon.textContent = this.getUserIcon(user);
+                participantsDiv.appendChild(icon);
             });
         });
     }
 
-    getUserColor(username) {
-        // Generate a consistent color based on username
+    getUserIcon(username) {
+        // Simple Japanese-inspired icons for users
+        const icons = ['○', '△', '□', '◇', '☆', '◐', '◑', '◒', '◓', '●', '▲', '■', '◆', '★', '◉'];
         let hash = 0;
         for (let i = 0; i < username.length; i++) {
             hash = username.charCodeAt(i) + ((hash << 5) - hash);
         }
-        const hue = Math.abs(hash) % 360;
-        return `hsl(${hue}, 60%, 50%)`;
+        return icons[Math.abs(hash) % icons.length];
+    }
+
+    getUserColor(username) {
+        // Subtle monochrome colors for consistency
+        return 'var(--text-primary)';
     }
 
     renderParticipants() {
@@ -651,8 +652,7 @@ class TimeSync {
         Object.keys(this.allAvailability).forEach(user => {
             const tag = document.createElement('div');
             tag.className = 'participant-tag';
-            tag.textContent = user;
-            tag.style.backgroundColor = this.getUserColor(user);
+            tag.innerHTML = `<span class="participant-tag-icon">${this.getUserIcon(user)}</span> ${user}`;
             participantsList.appendChild(tag);
         });
     }
@@ -830,23 +830,25 @@ class TimeSync {
         suggestionsList.innerHTML = '';
 
         if (!suggestions || (!suggestions.bestSingle.length && !suggestions.longestBlock.length)) {
-            suggestionsList.innerHTML = '<div class="suggestion-item">No availability overlap found yet. Add more participants to see suggestions.</div>';
+            suggestionsList.innerHTML = '<div class="suggestion-item">まだ重複がありません<br><span style="font-size: 0.8em; opacity: 0.7;">No availability overlap found yet</span></div>';
             return;
         }
 
-        // Best single time slots
+        // Best single time slots - simplified
         if (suggestions.bestSingle && suggestions.bestSingle.length > 0) {
             const bestSlotsContainer = document.createElement('div');
-            bestSlotsContainer.innerHTML = '<div class="suggestion-label">🏆 Best Single Times</div>';
+            bestSlotsContainer.innerHTML = '<div class="suggestion-label">最適な時間 • Best Times</div>';
             
             suggestions.bestSingle.forEach((slot, index) => {
                 const bestItem = document.createElement('div');
                 bestItem.className = 'suggestion-item';
-                const emoji = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+                const rank = index + 1;
                 bestItem.innerHTML = `
-                    ${emoji} ${slot.day} at ${slot.time}<br>
-                    <span style="font-size: 0.8em; color: #666;">${slot.availableCount} people available (${slot.percentage}%)</span>
-                    <div style="font-size: 0.75em; color: #888; margin-top: 4px;">Available: ${slot.users.join(', ')}</div>
+                    <div class="suggestion-rank">${rank}</div>
+                    <div class="suggestion-content">
+                        <div class="suggestion-time">${slot.day} at ${slot.time}</div>
+                        <div class="suggestion-users">${this.renderUserIcons(slot.users)} ${slot.availableCount} available</div>
+                    </div>
                 `;
                 bestSlotsContainer.appendChild(bestItem);
             });
@@ -854,11 +856,11 @@ class TimeSync {
             suggestionsList.appendChild(bestSlotsContainer);
         }
 
-        // Longest consecutive blocks
+        // Longest consecutive blocks - simplified
         if (suggestions.longestBlock && suggestions.longestBlock.length > 0) {
             const blocksContainer = document.createElement('div');
-            blocksContainer.innerHTML = '<div class="suggestion-label">⏰ Best Time Blocks</div>';
-            blocksContainer.style.marginTop = '20px';
+            blocksContainer.innerHTML = '<div class="suggestion-label">時間ブロック • Time Blocks</div>';
+            blocksContainer.style.marginTop = '24px';
             
             suggestions.longestBlock.forEach((block, index) => {
                 const blockItem = document.createElement('div');
@@ -866,17 +868,24 @@ class TimeSync {
                 const hours = Math.floor(block.duration / 60);
                 const minutes = block.duration % 60;
                 const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-                const emoji = index === 0 ? '🏆' : index === 1 ? '⭐' : '✨';
+                const rank = index + 1;
                 
                 blockItem.innerHTML = `
-                    ${emoji} ${block.day} from ${block.startTime} to ${block.endTime}<br>
-                    <span style="font-size: 0.8em; color: #666;">${durationText} with ${block.minParticipants} people available</span>
+                    <div class="suggestion-rank">${rank}</div>
+                    <div class="suggestion-content">
+                        <div class="suggestion-time">${block.day} ${block.startTime}–${block.endTime}</div>
+                        <div class="suggestion-users">${durationText} • ${block.minParticipants} people</div>
+                    </div>
                 `;
                 blocksContainer.appendChild(blockItem);
             });
             
             suggestionsList.appendChild(blocksContainer);
         }
+    }
+
+    renderUserIcons(users) {
+        return users.map(user => this.getUserIcon(user)).join(' ');
     }
 
     sharePoll() {
