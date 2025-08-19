@@ -1192,12 +1192,6 @@ class TimeSync {
         // Update theme toggle icon
         const themeIcon = document.querySelector('.theme-icon');
         themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
-        
-        // Add a subtle animation to the icon
-        themeIcon.style.transform = 'scale(0.8)';
-        setTimeout(() => {
-            themeIcon.style.transform = 'scale(1)';
-        }, 150);
     }
 }
 
