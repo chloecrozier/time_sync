@@ -103,7 +103,23 @@ This document outlines the technical limitations and constraints of the TimeSync
 - **Sharing Methods**: 
   - Direct URL copy
   - Web Share API (where supported)
+  - QR code generation (via external service)
+  - Formatted share messages
+  - Calendar (.ics) file export
   - Manual copy fallback
+
+### QR Code Generation
+- **Service Dependency**: Uses qrserver.com API
+- **QR Code Size**: 200x200px (display), 400x400px (download)
+- **Network Requirement**: Internet connection required for QR generation
+- **Download Format**: PNG image file
+
+### Calendar Export
+- **File Format**: iCalendar (.ics) standard
+- **Event Creation**: Based on poll suggestions or time range
+- **Compatibility**: Google Calendar, Outlook, Apple Calendar
+- **File Size**: ~1-5KB per exported calendar
+- **Event Duration**: 1 hour default for suggestions
 
 ### Offline Functionality
 - **Core Features**: Work offline after initial load

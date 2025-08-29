@@ -111,14 +111,59 @@ class TimeSync {
             this.addUser();
         });
 
-        // Share poll
-        document.getElementById('shareBtn').addEventListener('click', () => {
-            this.sharePoll();
+        // Share poll - toggle dropdown
+        document.getElementById('shareBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleShareMenu();
+        });
+
+        // Share menu options
+        document.getElementById('copyUrlBtn').addEventListener('click', () => {
+            this.copyUrlToClipboard(window.location.href);
+            this.hideShareMenu();
+        });
+
+        document.getElementById('showQRBtn').addEventListener('click', () => {
+            this.showQRCode();
+            this.hideShareMenu();
+        });
+
+        document.getElementById('shareTextBtn').addEventListener('click', () => {
+            this.copyShareMessage();
+            this.hideShareMenu();
+        });
+
+        document.getElementById('exportIcsBtn').addEventListener('click', () => {
+            this.exportToCalendar();
+            this.hideShareMenu();
+        });
+
+        // QR Modal
+        document.getElementById('closeQRModal').addEventListener('click', () => {
+            this.hideQRModal();
+        });
+
+        document.getElementById('downloadQRBtn').addEventListener('click', () => {
+            this.downloadQRCode();
         });
 
         // Copy calendar link
         document.getElementById('copyCalendarBtn').addEventListener('click', () => {
             this.copyCalendarLink();
+        });
+
+        // Close share menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.share-dropdown')) {
+                this.hideShareMenu();
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('qrModal').addEventListener('click', (e) => {
+            if (e.target.id === 'qrModal') {
+                this.hideQRModal();
+            }
         });
 
         // New poll
@@ -888,21 +933,166 @@ class TimeSync {
         return users.map(user => this.getUserIcon(user)).join(' ');
     }
 
+    // Share Menu Management
+    toggleShareMenu() {
+        const shareMenu = document.getElementById('shareMenu');
+        shareMenu.classList.toggle('show');
+    }
+
+    hideShareMenu() {
+        const shareMenu = document.getElementById('shareMenu');
+        shareMenu.classList.remove('show');
+    }
+
+    // Enhanced Sharing Methods
     sharePoll() {
-        const url = window.location.href;
+        // This method is now handled by the dropdown menu
+        this.toggleShareMenu();
+    }
+
+    copyShareMessage() {
+        if (!this.currentPoll) return;
         
-        if (navigator.share && navigator.canShare && navigator.canShare({ url })) {
-            navigator.share({
-                title: this.currentPoll.title,
-                text: 'Join my scheduling poll on TimeSync',
-                url: url
-            }).catch((error) => {
-                console.error('Share failed:', error);
-                this.copyUrlToClipboard(url);
+        const url = window.location.href;
+        const dateInfo = this.currentPoll.isDateMode 
+            ? `${this.currentPoll.dates[0]} to ${this.currentPoll.dates[this.currentPoll.dates.length - 1]}`
+            : `${this.getDayNames(this.currentPoll.days).join(', ')}`;
+        
+        const message = `📅 ${this.currentPoll.title}
+
+Please mark your availability for ${dateInfo} from ${this.formatTime12Hour(...this.parseTime(this.currentPoll.startTime))} to ${this.formatTime12Hour(...this.parseTime(this.currentPoll.endTime))}.
+
+Join the poll: ${url}
+
+Powered by TimeSync`;
+
+        this.copyToClipboard(message, 'Share message copied to clipboard');
+    }
+
+    showQRCode() {
+        const url = window.location.href;
+        const qrContainer = document.getElementById('qrCodeContainer');
+        const modal = document.getElementById('qrModal');
+        
+        // Clear previous QR code
+        qrContainer.innerHTML = '';
+        
+        // Generate QR code using a simple QR code service
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+        
+        const qrImage = document.createElement('img');
+        qrImage.src = qrCodeUrl;
+        qrImage.alt = 'QR Code for poll';
+        qrImage.style.maxWidth = '100%';
+        qrImage.style.height = 'auto';
+        
+        qrContainer.appendChild(qrImage);
+        modal.style.display = 'flex';
+    }
+
+    hideQRModal() {
+        const modal = document.getElementById('qrModal');
+        modal.style.display = 'none';
+    }
+
+    downloadQRCode() {
+        const url = window.location.href;
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`;
+        
+        const link = document.createElement('a');
+        link.href = qrCodeUrl;
+        link.download = `${this.currentPoll.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_qr_code.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.showToast('QR code downloaded');
+    }
+
+    exportToCalendar() {
+        if (!this.currentPoll) return;
+        
+        try {
+            const icsContent = this.generateICSFile();
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${this.currentPoll.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_schedule.ics`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            window.URL.revokeObjectURL(url);
+            this.showToast('Calendar file downloaded');
+        } catch (error) {
+            console.error('Error generating calendar file:', error);
+            this.showToast('Error generating calendar file', 3000, 'error');
+        }
+    }
+
+    generateICSFile() {
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        
+        let icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//TimeSync//TimeSync Scheduler//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH'
+        ];
+
+        // Get suggested times for calendar events
+        const suggestions = this.calculateBestTimes();
+        
+        if (suggestions && suggestions.bestSingle.length > 0) {
+            suggestions.bestSingle.forEach((suggestion, index) => {
+                const eventDate = this.getDateForSuggestion(suggestion);
+                const startDateTime = this.combineDateAndTime(eventDate, suggestion.time);
+                const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+                
+                const eventId = `timesync-${this.currentPoll.id}-${index}-${timestamp}`;
+                
+                icsContent.push(
+                    'BEGIN:VEVENT',
+                    `UID:${eventId}`,
+                    `DTSTAMP:${timestamp}`,
+                    `DTSTART:${this.formatDateTimeForICS(startDateTime)}`,
+                    `DTEND:${this.formatDateTimeForICS(endDateTime)}`,
+                    `SUMMARY:${this.escapeICSText(this.currentPoll.title)} - Option ${index + 1}`,
+                    `DESCRIPTION:${this.escapeICSText(`Suggested meeting time from TimeSync poll. ${suggestion.availableCount} participants available: ${suggestion.users.join(', ')}`)}`,
+                    `LOCATION:`,
+                    `STATUS:TENTATIVE`,
+                    'END:VEVENT'
+                );
             });
         } else {
-            this.copyUrlToClipboard(url);
+            // Create a placeholder event if no suggestions
+            const eventDate = this.currentPoll.isDateMode 
+                ? new Date(this.currentPoll.dates[0])
+                : this.getNextDateForDay(this.currentPoll.days[0]);
+            
+            const startDateTime = this.combineDateAndTime(eventDate, this.currentPoll.startTime);
+            const endDateTime = this.combineDateAndTime(eventDate, this.currentPoll.endTime);
+            
+            icsContent.push(
+                'BEGIN:VEVENT',
+                `UID:timesync-${this.currentPoll.id}-placeholder-${timestamp}`,
+                `DTSTAMP:${timestamp}`,
+                `DTSTART:${this.formatDateTimeForICS(startDateTime)}`,
+                `DTEND:${this.formatDateTimeForICS(endDateTime)}`,
+                `SUMMARY:${this.escapeICSText(this.currentPoll.title)} - Scheduling Poll`,
+                `DESCRIPTION:${this.escapeICSText(`TimeSync scheduling poll. Please visit the poll to mark your availability.`)}`,
+                `LOCATION:`,
+                `STATUS:TENTATIVE`,
+                'END:VEVENT'
+            );
         }
+
+        icsContent.push('END:VCALENDAR');
+        return icsContent.join('\r\n');
     }
 
     copyUrlToClipboard(url) {
@@ -1035,6 +1225,74 @@ class TimeSync {
 
     generateId() {
         return Math.random().toString(36).substr(2, 9);
+    }
+
+    // Helper methods for calendar export
+    copyToClipboard(text, successMessage) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                this.showToast(successMessage);
+            }).catch(() => {
+                this.fallbackCopy(text);
+            });
+        } else {
+            this.fallbackCopy(text);
+        }
+    }
+
+    parseTime(timeString) {
+        const [hours, minutes] = timeString.split(':').map(Number);
+        return [hours, minutes];
+    }
+
+    getDayNames(dayNumbers) {
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return dayNumbers.map(num => dayNames[num]);
+    }
+
+    getDateForSuggestion(suggestion) {
+        if (this.currentPoll.isDateMode) {
+            // Find the date that matches the suggestion day
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const targetDayIndex = dayNames.indexOf(suggestion.day);
+            
+            for (const dateStr of this.currentPoll.dates) {
+                const date = new Date(dateStr);
+                if (date.getDay() === targetDayIndex) {
+                    return date;
+                }
+            }
+            // Fallback to first date
+            return new Date(this.currentPoll.dates[0]);
+        } else {
+            // For general days, find the next occurrence of this day
+            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const targetDayIndex = dayNames.indexOf(suggestion.day);
+            return this.getNextDateForDay(targetDayIndex);
+        }
+    }
+
+    getNextDateForDay(dayOfWeek) {
+        const today = new Date();
+        const targetDay = new Date(today);
+        const daysUntilTarget = (dayOfWeek - today.getDay() + 7) % 7;
+        targetDay.setDate(today.getDate() + (daysUntilTarget === 0 ? 7 : daysUntilTarget));
+        return targetDay;
+    }
+
+    combineDateAndTime(date, timeString) {
+        const [hours, minutes] = this.parseTime(timeString);
+        const combined = new Date(date);
+        combined.setHours(hours, minutes, 0, 0);
+        return combined;
+    }
+
+    formatDateTimeForICS(date) {
+        return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    }
+
+    escapeICSText(text) {
+        return text.replace(/[,;\\]/g, '\\$&').replace(/\n/g, '\\n');
     }
 
     savePollToStorage() {

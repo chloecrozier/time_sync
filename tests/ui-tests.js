@@ -372,4 +372,165 @@ describe('UI Tests', () => {
         
         teardownTest();
     });
+
+    it('should toggle share menu correctly', () => {
+        setupTest();
+        
+        // Mock share menu element
+        let menuVisible = false;
+        const mockShareMenu = {
+            classList: {
+                toggle: (className) => {
+                    if (className === 'show') {
+                        menuVisible = !menuVisible;
+                    }
+                },
+                remove: (className) => {
+                    if (className === 'show') {
+                        menuVisible = false;
+                    }
+                }
+            }
+        };
+        
+        document.getElementById = (id) => {
+            if (id === 'shareMenu') return mockShareMenu;
+            return { innerHTML: '', style: {}, textContent: '' };
+        };
+        
+        // Test toggle
+        timeSync.toggleShareMenu();
+        expect(menuVisible).toBe(true);
+        
+        // Test hide
+        timeSync.hideShareMenu();
+        expect(menuVisible).toBe(false);
+        
+        teardownTest();
+    });
+
+    it('should show QR modal correctly', () => {
+        setupTest();
+        
+        // Mock QR modal elements
+        let modalVisible = false;
+        let qrImageSrc = '';
+        const mockModal = {
+            style: {
+                set display(value) { modalVisible = (value === 'flex'); }
+            }
+        };
+        const mockQRContainer = {
+            innerHTML: '',
+            appendChild: (element) => {
+                qrImageSrc = element.src;
+            }
+        };
+        
+        document.getElementById = (id) => {
+            if (id === 'qrModal') return mockModal;
+            if (id === 'qrCodeContainer') return mockQRContainer;
+            return { innerHTML: '', style: {}, textContent: '' };
+        };
+        
+        // Mock window.location
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            value: { href: 'http://test.com/poll' },
+            writable: true
+        });
+        
+        timeSync.showQRCode();
+        
+        expect(modalVisible).toBe(true);
+        expect(qrImageSrc).toContain('qrserver.com');
+        expect(qrImageSrc).toContain('http://test.com/poll');
+        
+        // Restore location
+        window.location = originalLocation;
+        
+        teardownTest();
+    });
+
+    it('should hide QR modal correctly', () => {
+        setupTest();
+        
+        let modalVisible = true;
+        const mockModal = {
+            style: {
+                set display(value) { modalVisible = (value === 'flex'); }
+            }
+        };
+        
+        document.getElementById = (id) => {
+            if (id === 'qrModal') return mockModal;
+            return { innerHTML: '', style: {}, textContent: '' };
+        };
+        
+        timeSync.hideQRModal();
+        
+        expect(modalVisible).toBe(false);
+        
+        teardownTest();
+    });
+
+    it('should handle calendar export UI correctly', () => {
+        setupTest();
+        
+        timeSync.currentPoll = {
+            id: 'test123',
+            title: 'Test Meeting',
+            isDateMode: false,
+            days: [1],
+            startTime: '10:00',
+            endTime: '11:00'
+        };
+        
+        // Mock document.createElement and URL.createObjectURL
+        let blobCreated = false;
+        let linkClicked = false;
+        const originalCreateElement = document.createElement;
+        const originalCreateObjectURL = window.URL.createObjectURL;
+        const originalRevokeObjectURL = window.URL.revokeObjectURL;
+        
+        document.createElement = (tagName) => {
+            if (tagName === 'a') {
+                return {
+                    href: '',
+                    download: '',
+                    click: () => { linkClicked = true; }
+                };
+            }
+            return originalCreateElement.call(document, tagName);
+        };
+        
+        window.URL.createObjectURL = (blob) => {
+            blobCreated = true;
+            return 'blob:test-url';
+        };
+        
+        window.URL.revokeObjectURL = () => {};
+        
+        // Mock document.body
+        document.body = {
+            appendChild: () => {},
+            removeChild: () => {}
+        };
+        
+        let toastMessage = '';
+        timeSync.showToast = (message) => { toastMessage = message; };
+        
+        timeSync.exportToCalendar();
+        
+        expect(blobCreated).toBe(true);
+        expect(linkClicked).toBe(true);
+        expect(toastMessage).toBe('Calendar file downloaded');
+        
+        // Restore mocks
+        document.createElement = originalCreateElement;
+        window.URL.createObjectURL = originalCreateObjectURL;
+        window.URL.revokeObjectURL = originalRevokeObjectURL;
+        
+        teardownTest();
+    });
 });

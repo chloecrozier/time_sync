@@ -284,4 +284,108 @@ describe('Core Functionality', () => {
         
         teardownTest();
     });
+
+    it('should generate share message correctly', () => {
+        setupTest();
+        
+        timeSync.currentPoll = {
+            title: 'Team Meeting',
+            isDateMode: false,
+            days: [1, 3], // Monday, Wednesday
+            startTime: '10:00',
+            endTime: '12:00'
+        };
+        
+        // Mock clipboard
+        let copiedText = '';
+        timeSync.copyToClipboard = (text, message) => { copiedText = text; };
+        
+        timeSync.copyShareMessage();
+        
+        expect(copiedText).toContain('Team Meeting');
+        expect(copiedText).toContain('Monday, Wednesday');
+        expect(copiedText).toContain('10:00 AM');
+        expect(copiedText).toContain('12:00 PM');
+        expect(copiedText).toContain('TimeSync');
+        
+        teardownTest();
+    });
+
+    it('should generate ICS file content correctly', () => {
+        setupTest();
+        
+        timeSync.currentPoll = {
+            id: 'test123',
+            title: 'Test Meeting',
+            isDateMode: true,
+            dates: ['2024-01-15'],
+            startTime: '14:00',
+            endTime: '15:00'
+        };
+        
+        const icsContent = timeSync.generateICSFile();
+        
+        expect(icsContent).toContain('BEGIN:VCALENDAR');
+        expect(icsContent).toContain('END:VCALENDAR');
+        expect(icsContent).toContain('Test Meeting');
+        expect(icsContent).toContain('BEGIN:VEVENT');
+        expect(icsContent).toContain('END:VEVENT');
+        
+        teardownTest();
+    });
+
+    it('should parse time strings correctly', () => {
+        setupTest();
+        
+        expect(timeSync.parseTime('09:30')).toEqual([9, 30]);
+        expect(timeSync.parseTime('14:45')).toEqual([14, 45]);
+        expect(timeSync.parseTime('00:00')).toEqual([0, 0]);
+        
+        teardownTest();
+    });
+
+    it('should get day names correctly', () => {
+        setupTest();
+        
+        expect(timeSync.getDayNames([0, 1, 2])).toEqual(['Sunday', 'Monday', 'Tuesday']);
+        expect(timeSync.getDayNames([5, 6])).toEqual(['Friday', 'Saturday']);
+        
+        teardownTest();
+    });
+
+    it('should combine date and time correctly', () => {
+        setupTest();
+        
+        const date = new Date('2024-01-15');
+        const combined = timeSync.combineDateAndTime(date, '14:30');
+        
+        expect(combined.getFullYear()).toBe(2024);
+        expect(combined.getMonth()).toBe(0); // January
+        expect(combined.getDate()).toBe(15);
+        expect(combined.getHours()).toBe(14);
+        expect(combined.getMinutes()).toBe(30);
+        
+        teardownTest();
+    });
+
+    it('should format datetime for ICS correctly', () => {
+        setupTest();
+        
+        const date = new Date('2024-01-15T14:30:00.000Z');
+        const formatted = timeSync.formatDateTimeForICS(date);
+        
+        expect(formatted).toBe('20240115T143000Z');
+        
+        teardownTest();
+    });
+
+    it('should escape ICS text correctly', () => {
+        setupTest();
+        
+        expect(timeSync.escapeICSText('Hello, World;')).toBe('Hello\\, World\\;');
+        expect(timeSync.escapeICSText('Line 1\nLine 2')).toBe('Line 1\\nLine 2');
+        expect(timeSync.escapeICSText('Back\\slash')).toBe('Back\\\\slash');
+        
+        teardownTest();
+    });
 });

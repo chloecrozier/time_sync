@@ -87,9 +87,30 @@
             <div class="poll-display" id="pollDisplay" style="display: none;">
                 <div class="section-header">
                     <h2 id="pollTitleDisplay"></h2>
-                                    <div class="action-buttons">
-                    <button class="action-btn" id="shareBtn">Share Poll</button>
-                    <button class="action-btn secondary" id="copyCalendarBtn">Copy Calendar Link</button>
+                    <div class="action-buttons">
+                        <div class="share-dropdown">
+                            <button class="action-btn" id="shareBtn">Share Poll</button>
+                            <div class="share-menu" id="shareMenu">
+                                <button class="share-option" id="copyUrlBtn">
+                                    <span class="share-icon">🔗</span>
+                                    Copy Link
+                                </button>
+                                <button class="share-option" id="showQRBtn">
+                                    <span class="share-icon">📱</span>
+                                    QR Code
+                                </button>
+                                <button class="share-option" id="shareTextBtn">
+                                    <span class="share-icon">📝</span>
+                                    Copy Message
+                                </button>
+                                <button class="share-option" id="exportIcsBtn">
+                                    <span class="share-icon">📅</span>
+                                    Export Calendar
+                                </button>
+                            </div>
+                        </div>
+                        <button class="action-btn secondary" id="copyCalendarBtn">Copy Schedule</button>
+                    </div>
                 </div>
                 <div class="timezone-info">
                     <span id="currentTimezone"></span>
@@ -130,6 +151,23 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Share via QR Code</h3>
+                <button class="modal-close" id="closeQRModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="qrCodeContainer" class="qr-container"></div>
+                <p class="qr-instructions">Scan this QR code with your phone to open the poll</p>
+                <div class="qr-actions">
+                    <button class="action-btn secondary" id="downloadQRBtn">Download QR Code</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
