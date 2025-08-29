@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeSync - Test Suite</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-results {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .test-pass { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .test-fail { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .test-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .run-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .run-btn:hover { background: #0056b3; }
+        .run-btn:disabled { background: #6c757d; cursor: not-allowed; }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        .stat {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            min-width: 80px;
+        }
+        .stat-pass { background: #d4edda; color: #155724; }
+        .stat-fail { background: #f8d7da; color: #721c24; }
+        .stat-total { background: #e2e3e5; color: #383d41; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>TimeSync Test Suite</h1>
+            <p>Comprehensive unit tests for TimeSync scheduling application</p>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button class="run-btn" onclick="runAllTests()">Run All Tests</button>
+            <button class="run-btn" onclick="runCoreTests()">Core Functionality</button>
+            <button class="run-btn" onclick="runUITests()">UI Tests</button>
+            <button class="run-btn" onclick="runValidationTests()">Validation Tests</button>
+            <button class="run-btn" onclick="runLimitTests()">Limit Tests</button>
+            <button class="run-btn" onclick="clearResults()">Clear Results</button>
+        </div>
+
+        <div class="stats" id="testStats" style="display: none;">
+            <div class="stat stat-total">
+                <div class="stat-number" id="totalTests">0</div>
+                <div>Total</div>
+            </div>
+            <div class="stat stat-pass">
+                <div class="stat-number" id="passedTests">0</div>
+                <div>Passed</div>
+            </div>
+            <div class="stat stat-fail">
+                <div class="stat-number" id="failedTests">0</div>
+                <div>Failed</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="testResults" class="test-results test-info">
+                Click "Run All Tests" to begin testing...
+            </div>
+        </div>
+    </div>
+
+    <!-- Load the main TimeSync class for testing -->
+    <script src="../script.js"></script>
+    
+    <!-- Load test suites -->
+    <script src="core-tests.js"></script>
+    <script src="ui-tests.js"></script>
+    <script src="validation-tests.js"></script>
+    <script src="limit-tests.js"></script>
+    <script src="test-runner.js"></script>
+</body>
+</html>
