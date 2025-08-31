@@ -1,0 +1,6 @@
+Case 1: User enters the page to create a new poll
+    - The title of the chrome tab should be "TimeSync - Create a new Poll" or soemthing similar
+    - There are two conditions before a poll can be created are a title and at least one selected day. This can only be done by pressing the "Create poll" button. If they click it before these conditons are met, just add a banner that says "poll could nto be created" and the list the unmet condtions like "no title" or "at least on day is not slected". There should not be a place to enter a name or create a new poll, just enter the time range and the title
+    - Please specify the time zone that the poll creator is in within the UI.
+    - when the user is specifying days, please let them select 1-7 days within sun-sat genericlly, or on a calendar select a 1-7 day range based on specific calendar days in the future. ensure its not just seven days in the future from the current date, but and future one-seven days inlcuding the current day. add a "today" button for when users scroll to far into the future
+    - After the user clicks "create poll" it will bring them to a new page

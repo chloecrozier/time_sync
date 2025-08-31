@@ -13,6 +13,7 @@ class TimeSync {
         this.initializeTimeOptions();
         this.bindEvents();
         this.initializeTheme();
+        this.displayCreatorTimezone();
         this.loadPollFromURL();
         this.setupKeyboardNavigation();
     }
@@ -65,12 +66,10 @@ class TimeSync {
         // Schedule type toggle
         document.getElementById('generalDaysBtn').addEventListener('click', () => {
             this.switchToGeneralDays();
-            this.checkAutoCreatePoll();
         });
 
         document.getElementById('specificDatesBtn').addEventListener('click', () => {
             this.switchToSpecificDates();
-            this.checkAutoCreatePoll();
         });
 
         // Day selection
@@ -86,19 +85,21 @@ class TimeSync {
                     e.target.classList.add('selected');
                     e.target.setAttribute('aria-pressed', 'true');
                 }
-                this.checkAutoCreatePoll();
             });
         });
 
         // Date range selection
         document.getElementById('startDate').addEventListener('change', () => {
             this.updateDateRange();
-            this.checkAutoCreatePoll();
         });
 
         document.getElementById('endDate').addEventListener('change', () => {
             this.updateDateRange();
-            this.checkAutoCreatePoll();
+        });
+
+        // Today button
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            this.setToday();
         });
 
         // Theme toggle
@@ -106,17 +107,9 @@ class TimeSync {
             this.toggleTheme();
         });
 
-        // Auto-create poll when all fields are complete
-        document.getElementById('pollTitle').addEventListener('input', () => {
-            this.checkAutoCreatePoll();
-        });
-
-        document.getElementById('startTime').addEventListener('change', () => {
-            this.checkAutoCreatePoll();
-        });
-
-        document.getElementById('endTime').addEventListener('change', () => {
-            this.checkAutoCreatePoll();
+        // Create poll button
+        document.getElementById('createPollBtn').addEventListener('click', () => {
+            this.createPoll();
         });
 
 
@@ -299,27 +292,19 @@ class TimeSync {
         });
     }
 
-    checkAutoCreatePoll() {
-        // Don't auto-create if poll already exists
-        if (this.currentPoll) return;
-
-        const title = document.getElementById('pollTitle').value.trim();
-        const startTime = document.getElementById('startTime').value;
-        const endTime = document.getElementById('endTime').value;
-
-        // Check if all required fields are complete
-        let hasValidSelection = false;
-        
-        if (this.isDateMode) {
-            hasValidSelection = this.selectedDates.length > 0;
-        } else {
-            hasValidSelection = this.selectedDays.size > 0;
+    displayCreatorTimezone() {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const timezoneElement = document.getElementById('creatorTimezone');
+        if (timezoneElement) {
+            timezoneElement.textContent = timezone;
         }
+    }
 
-        // Auto-create if all fields are complete
-        if (title && startTime && endTime && hasValidSelection) {
-            this.createPoll();
-        }
+    setToday() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('startDate').value = today;
+        document.getElementById('endDate').value = today;
+        this.updateDateRange();
     }
 
     createPoll() {
@@ -327,31 +312,32 @@ class TimeSync {
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
 
-        // Enhanced validation
+        // Validation with specific error messages
+        const errors = [];
+        
         if (!title) {
-            this.showToast('Please enter a poll title');
-            document.getElementById('pollTitle').focus();
-            return;
+            errors.push('no title');
         }
 
         if (title.length > 100) {
-            this.showToast('Poll title must be 100 characters or less');
-            document.getElementById('pollTitle').focus();
-            return;
+            errors.push('title too long (max 100 characters)');
         }
 
         // Validate selection based on mode
         if (this.isDateMode) {
             if (this.selectedDates.length === 0) {
-                this.showToast('Please select a date range');
-                document.getElementById('startDate').focus();
-                return;
+                errors.push('at least one day is not selected');
             }
         } else {
             if (this.selectedDays.size === 0) {
-                this.showToast('Please select at least one day');
-                return;
+                errors.push('at least one day is not selected');
             }
+        }
+
+        if (errors.length > 0) {
+            const errorMessage = `Poll could not be created: ${errors.join(', ')}`;
+            this.showToast(errorMessage, 5000, 'error');
+            return;
         }
 
         if (startTime >= endTime) {
