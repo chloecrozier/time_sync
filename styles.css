@@ -23,6 +23,34 @@
     --chip-border: #dddddd;
 }
 
+/* Auto dark mode based on system preference */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        /* Dark theme - Japanese minimalist */
+        --bg-primary: #1a1a1a;
+        --bg-secondary: #222222;
+        --bg-tertiary: #2a2a2a;
+        --bg-quaternary: #333333;
+        --text-primary: #eeeeee;
+        --text-secondary: #cccccc;
+        --text-tertiary: #999999;
+        --text-quaternary: #666666;
+        --border-primary: #333333;
+        --border-secondary: #444444;
+        --border-tertiary: #2a2a2a;
+        --accent-primary: #eeeeee;
+        --accent-secondary: #cccccc;
+        --shadow-light: rgba(0, 0, 0, 0.1);
+        --shadow-medium: rgba(0, 0, 0, 0.15);
+        --shadow-heavy: rgba(0, 0, 0, 0.2);
+        --hover-bg: #2a2a2a;
+        --hover-border: #555555;
+        --chip-bg: #333333;
+        --chip-text: #cccccc;
+        --chip-border: #444444;
+    }
+}
+
 [data-theme="dark"] {
     /* Dark theme - Japanese minimalist */
     --bg-primary: #1a1a1a;
@@ -61,7 +89,7 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     font-weight: 400;
-    transition: background-color 0.2s ease, color 0.2s ease;
+
 }
 
 .container {
@@ -96,7 +124,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+
 }
 
 .theme-toggle:hover {
@@ -105,7 +133,7 @@ body {
 
 .theme-icon {
     font-size: 1rem;
-    transition: none;
+
 }
 
 .title {
@@ -114,7 +142,7 @@ body {
     margin-bottom: 8px;
     color: var(--text-primary);
     letter-spacing: -0.01em;
-    transition: color 0.3s ease;
+
 }
 
 .subtitle {
@@ -122,7 +150,7 @@ body {
     font-weight: 300;
     color: var(--text-tertiary);
     letter-spacing: 0.1em;
-    transition: color 0.3s ease;
+
     opacity: 0.7;
 }
 
@@ -130,8 +158,8 @@ body {
     background: var(--bg-secondary);
     border: 1px solid var(--border-primary);
     border-radius: 8px;
-    box-shadow: 0 1px 2px var(--shadow-light);
-    transition: all 0.2s ease;
+
+
 }
 
 .poll-creator, .poll-display {
@@ -149,14 +177,14 @@ body {
     margin-bottom: 8px;
     color: var(--text-primary);
     letter-spacing: 0;
-    transition: color 0.3s ease;
+
 }
 
 .section-header p {
     color: var(--text-tertiary);
     font-size: 0.9rem;
     font-weight: 300;
-    transition: color 0.3s ease;
+
 }
 
 .form-group {
@@ -169,7 +197,7 @@ body {
     font-weight: 400;
     color: var(--text-secondary);
     font-size: 0.9rem;
-    transition: color 0.3s ease;
+
 }
 
 .form-group input, .form-group select {
@@ -181,13 +209,13 @@ body {
     font-weight: 300;
     background: transparent;
     color: var(--text-primary);
-    transition: all 0.3s ease;
+
 }
 
 .form-group input:focus, .form-group select:focus {
     outline: none;
     border-bottom-color: var(--accent-primary);
-    box-shadow: 0 2px 0 var(--accent-primary);
+
 }
 
 .form-group input:invalid {
@@ -195,7 +223,7 @@ body {
 }
 
 .form-group input:invalid:focus {
-    box-shadow: 0 2px 0 #dc3545;
+
 }
 
 .form-group input::placeholder {
@@ -209,7 +237,7 @@ body {
     background: var(--bg-quaternary);
     border-radius: 8px;
     padding: 4px;
-    transition: background-color 0.3s ease;
+
 }
 
 .type-btn {
@@ -220,7 +248,7 @@ body {
     cursor: pointer;
     font-weight: 400;
     font-size: 0.9rem;
-    transition: all 0.3s ease;
+
     border-radius: 6px;
     color: var(--text-secondary);
 }
@@ -229,7 +257,7 @@ body {
     background: var(--bg-secondary);
     color: var(--text-primary);
     font-weight: 500;
-    box-shadow: 0 2px 4px var(--shadow-light);
+
 }
 
 .type-btn:hover:not(.active) {
@@ -270,13 +298,13 @@ body {
     font-size: 0.9rem;
     background: var(--bg-secondary);
     color: var(--text-primary);
-    transition: all 0.2s ease;
+
 }
 
 .date-input-group input[type="date"]:focus {
     outline: none;
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.1);
+
 }
 
 .date-input-group input[type="date"]:invalid {
@@ -302,7 +330,7 @@ body {
     font-size: 0.8rem;
     font-weight: 500;
     border: 1px solid var(--chip-border);
-    transition: all 0.3s ease;
+
 }
 
 .day-btn {
@@ -312,7 +340,7 @@ body {
     cursor: pointer;
     font-weight: 300;
     font-size: 0.9rem;
-    transition: all 0.3s ease;
+
     color: var(--text-tertiary);
 }
 
@@ -345,14 +373,11 @@ body {
     font-size: 0.9rem;
     font-weight: 400;
     cursor: pointer;
-    transition: all 0.3s ease;
     letter-spacing: 0.02em;
 }
 
 .create-poll-btn:hover, .action-btn:hover, .new-poll-btn:hover {
     background: var(--accent-secondary);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px var(--shadow-medium);
 }
 
 .action-btn.secondary {
@@ -386,7 +411,7 @@ body {
     background: var(--bg-secondary);
     border: 1px solid var(--border-primary);
     border-radius: 6px;
-    box-shadow: 0 4px 12px var(--shadow-medium);
+
     z-index: 1000;
     min-width: 180px;
     margin-top: 4px;
@@ -408,7 +433,6 @@ body {
     cursor: pointer;
     font-size: 0.9rem;
     color: var(--text-primary);
-    transition: background-color 0.2s ease;
 }
 
 .share-option:hover {
@@ -531,7 +555,7 @@ body {
     margin-bottom: 30px;
     border: 1px solid var(--border-primary);
     border-radius: 16px;
-    box-shadow: 0 1px 3px var(--shadow-light);
+
 }
 
 .instruction-text {
@@ -562,7 +586,6 @@ body {
     padding: 12px 20px;
     font-weight: 300;
     cursor: pointer;
-    transition: all 0.2s ease;
     white-space: nowrap;
     font-size: 0.9rem;
 }
@@ -638,7 +661,7 @@ body {
     align-items: center;
     justify-content: center;
     color: var(--text-secondary);
-    transition: all 0.2s ease;
+
 }
 
 .time-slots {
@@ -651,7 +674,7 @@ body {
     min-height: 36px;
     border-right: 1px solid var(--border-tertiary);
     cursor: pointer;
-    transition: background-color 0.1s ease;
+
     position: relative;
     background: var(--bg-secondary);
     user-select: none;
@@ -802,13 +825,13 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.2s ease;
+
 }
 
 .participant-tag:hover {
     background: var(--bg-quaternary);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px var(--shadow-light);
+
+
 }
 
 .participant-tag-icon {
@@ -826,16 +849,16 @@ body {
     font-weight: 300;
     font-size: 0.9rem;
     border-radius: 8px;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
+
+
     z-index: 1000;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+
     max-width: 300px;
     word-wrap: break-word;
 }
 
 .toast.show {
-    transform: translateX(0);
+
 }
 
 .toast.error {
@@ -884,12 +907,12 @@ body {
         top: 20px;
         right: 20px;
         left: 20px;
-        transform: translateY(-100%);
+
         max-width: none;
     }
     
     .toast.show {
-        transform: translateY(0);
+
     }
     
     .title {

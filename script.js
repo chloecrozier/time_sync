@@ -65,10 +65,12 @@ class TimeSync {
         // Schedule type toggle
         document.getElementById('generalDaysBtn').addEventListener('click', () => {
             this.switchToGeneralDays();
+            this.checkAutoCreatePoll();
         });
 
         document.getElementById('specificDatesBtn').addEventListener('click', () => {
             this.switchToSpecificDates();
+            this.checkAutoCreatePoll();
         });
 
         // Day selection
@@ -84,16 +86,19 @@ class TimeSync {
                     e.target.classList.add('selected');
                     e.target.setAttribute('aria-pressed', 'true');
                 }
+                this.checkAutoCreatePoll();
             });
         });
 
         // Date range selection
         document.getElementById('startDate').addEventListener('change', () => {
             this.updateDateRange();
+            this.checkAutoCreatePoll();
         });
 
         document.getElementById('endDate').addEventListener('change', () => {
             this.updateDateRange();
+            this.checkAutoCreatePoll();
         });
 
         // Theme toggle
@@ -101,10 +106,20 @@ class TimeSync {
             this.toggleTheme();
         });
 
-        // Create poll
-        document.getElementById('createPollBtn').addEventListener('click', () => {
-            this.createPoll();
+        // Auto-create poll when all fields are complete
+        document.getElementById('pollTitle').addEventListener('input', () => {
+            this.checkAutoCreatePoll();
         });
+
+        document.getElementById('startTime').addEventListener('change', () => {
+            this.checkAutoCreatePoll();
+        });
+
+        document.getElementById('endTime').addEventListener('change', () => {
+            this.checkAutoCreatePoll();
+        });
+
+
 
         // Add user
         document.getElementById('addUserBtn').addEventListener('click', () => {
@@ -282,6 +297,29 @@ class TimeSync {
             });
             container.appendChild(chip);
         });
+    }
+
+    checkAutoCreatePoll() {
+        // Don't auto-create if poll already exists
+        if (this.currentPoll) return;
+
+        const title = document.getElementById('pollTitle').value.trim();
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+
+        // Check if all required fields are complete
+        let hasValidSelection = false;
+        
+        if (this.isDateMode) {
+            hasValidSelection = this.selectedDates.length > 0;
+        } else {
+            hasValidSelection = this.selectedDays.size > 0;
+        }
+
+        // Auto-create if all fields are complete
+        if (title && startTime && endTime && hasValidSelection) {
+            this.createPoll();
+        }
     }
 
     createPoll() {
@@ -535,6 +573,12 @@ class TimeSync {
     }
 
     addUser() {
+        // First check if poll exists
+        if (!this.currentPoll) {
+            this.showToast('Please complete the poll setup first');
+            return;
+        }
+
         const nameInput = document.getElementById('userName');
         const name = nameInput.value.trim();
         
@@ -1432,24 +1476,81 @@ Powered by TimeSync`;
     }
 
     initializeTheme() {
-        // Check for saved theme preference or default to light mode
-        const savedTheme = localStorage.getItem('timesync-theme') || 'light';
-        this.setTheme(savedTheme);
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('timesync-theme');
+        
+        if (savedTheme) {
+            // Use saved preference
+            this.setTheme(savedTheme);
+        } else {
+            // Auto-detect system preference
+            this.setSystemTheme();
+        }
+        
+        // Listen for system theme changes
+        this.setupSystemThemeListener();
+    }
+
+    getSystemTheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    setSystemTheme() {
+        const systemTheme = this.getSystemTheme();
+        this.setTheme(systemTheme, false); // Don't save to localStorage for auto mode
+    }
+
+    setupSystemThemeListener() {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        mediaQuery.addEventListener('change', (e) => {
+            // Only auto-update if user hasn't manually set a preference
+            const savedTheme = localStorage.getItem('timesync-theme');
+            if (!savedTheme) {
+                this.setSystemTheme();
+            }
+        });
     }
 
     toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        this.setTheme(newTheme);
+        const savedTheme = localStorage.getItem('timesync-theme');
+        
+        if (!savedTheme) {
+            // Currently in auto mode, switch to light
+            this.setTheme('light', true);
+        } else if (savedTheme === 'light') {
+            // Currently light, switch to dark
+            this.setTheme('dark', true);
+        } else {
+            // Currently dark, switch back to auto (system)
+            localStorage.removeItem('timesync-theme');
+            this.setSystemTheme();
+        }
+        
+        this.updateThemeIcon();
     }
 
-    setTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('timesync-theme', theme);
-        
-        // Update theme toggle icon
+    updateThemeIcon() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const savedTheme = localStorage.getItem('timesync-theme');
         const themeIcon = document.querySelector('.theme-icon');
-        themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        
+        if (!savedTheme) {
+            // Auto mode - show system indicator
+            themeIcon.textContent = '🔄';
+        } else {
+            themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+        }
+    }
+
+    setTheme(theme, savePreference = true) {
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        if (savePreference) {
+            localStorage.setItem('timesync-theme', theme);
+        }
+        
+        this.updateThemeIcon();
     }
 }
 
