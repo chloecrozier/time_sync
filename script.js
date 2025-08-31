@@ -919,14 +919,14 @@ class TimeSync {
         suggestionsList.innerHTML = '';
 
         if (!suggestions || (!suggestions.bestSingle.length && !suggestions.longestBlock.length)) {
-            suggestionsList.innerHTML = '<div class="suggestion-item">まだ重複がありません<br><span style="font-size: 0.8em; opacity: 0.7;">No availability overlap found yet</span></div>';
+            suggestionsList.innerHTML = '<div class="suggestion-item">共通の時を探しています<br><span style="font-size: 0.8em; opacity: 0.7;">Searching for shared moments</span></div>';
             return;
         }
 
         // Best single time slots - simplified
         if (suggestions.bestSingle && suggestions.bestSingle.length > 0) {
             const bestSlotsContainer = document.createElement('div');
-            bestSlotsContainer.innerHTML = '<div class="suggestion-label">最適な時間 • Best Times</div>';
+            bestSlotsContainer.innerHTML = '<div class="suggestion-label">最良の時 • Best Times</div>';
             
             suggestions.bestSingle.forEach((slot, index) => {
                 const bestItem = document.createElement('div');
@@ -948,7 +948,7 @@ class TimeSync {
         // Longest consecutive blocks - simplified
         if (suggestions.longestBlock && suggestions.longestBlock.length > 0) {
             const blocksContainer = document.createElement('div');
-            blocksContainer.innerHTML = '<div class="suggestion-label">時間ブロック • Time Blocks</div>';
+            blocksContainer.innerHTML = '<div class="suggestion-label">連続する時 • Time Blocks</div>';
             blocksContainer.style.marginTop = '24px';
             
             suggestions.longestBlock.forEach((block, index) => {
@@ -1002,7 +1002,7 @@ class TimeSync {
             ? `${this.currentPoll.dates[0]} to ${this.currentPoll.dates[this.currentPoll.dates.length - 1]}`
             : `${this.getDayNames(this.currentPoll.days).join(', ')}`;
         
-        const message = `📅 ${this.currentPoll.title}
+        const message = `${this.currentPoll.title}
 
 Please mark your availability for ${dateInfo} from ${this.formatTime12Hour(...this.parseTime(this.currentPoll.startTime))} to ${this.formatTime12Hour(...this.parseTime(this.currentPoll.endTime))}.
 
@@ -1483,74 +1483,76 @@ Powered by TimeSync`;
             // Use saved preference
             this.setTheme(savedTheme);
         } else {
-            // Auto-detect system preference
-            this.setSystemTheme();
+            // Start with system preference but save it
+            const systemTheme = this.getSystemTheme();
+            this.setTheme(systemTheme);
         }
-        
-        // Listen for system theme changes
-        this.setupSystemThemeListener();
     }
 
     getSystemTheme() {
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
 
-    setSystemTheme() {
-        const systemTheme = this.getSystemTheme();
-        this.setTheme(systemTheme, false); // Don't save to localStorage for auto mode
-    }
-
-    setupSystemThemeListener() {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        mediaQuery.addEventListener('change', (e) => {
-            // Only auto-update if user hasn't manually set a preference
-            const savedTheme = localStorage.getItem('timesync-theme');
-            if (!savedTheme) {
-                this.setSystemTheme();
-            }
-        });
-    }
-
     toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
-        const savedTheme = localStorage.getItem('timesync-theme');
-        
-        if (!savedTheme) {
-            // Currently in auto mode, switch to light
-            this.setTheme('light', true);
-        } else if (savedTheme === 'light') {
-            // Currently light, switch to dark
-            this.setTheme('dark', true);
-        } else {
-            // Currently dark, switch back to auto (system)
-            localStorage.removeItem('timesync-theme');
-            this.setSystemTheme();
-        }
-        
-        this.updateThemeIcon();
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        this.setTheme(newTheme);
     }
 
-    updateThemeIcon() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const savedTheme = localStorage.getItem('timesync-theme');
-        const themeIcon = document.querySelector('.theme-icon');
-        
-        if (!savedTheme) {
-            // Auto mode - show system indicator
-            themeIcon.textContent = '🔄';
-        } else {
-            themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
-        }
-    }
-
-    setTheme(theme, savePreference = true) {
+    setTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('timesync-theme', theme);
         
-        if (savePreference) {
-            localStorage.setItem('timesync-theme', theme);
+        // Update theme toggle icon
+        const themeIcon = document.querySelector('.theme-icon');
+        themeIcon.textContent = theme === 'dark' ? '○' : '●';
+        
+        // Update favicon color
+        this.updateFavicon(theme);
+    }
+
+    updateFavicon(theme) {
+        const color = theme === 'dark' ? '#fff' : '#333';
+        
+        const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Outer circle with minimal Japanese style -->
+  <circle cx="16" cy="16" r="13" fill="none" stroke="${color}" stroke-width="1"/>
+  
+  <!-- Simple hour markers at 12, 3, 6, 9 -->
+  <line x1="16" y1="4" x2="16" y2="6" stroke="${color}" stroke-width="1"/>
+  <line x1="28" y1="16" x2="26" y2="16" stroke="${color}" stroke-width="1"/>
+  <line x1="16" y1="28" x2="16" y2="26" stroke="${color}" stroke-width="1"/>
+  <line x1="4" y1="16" x2="6" y2="16" stroke="${color}" stroke-width="1"/>
+  
+  <!-- Clock hands in minimalist style -->
+  <!-- Hour hand pointing to 10 -->
+  <line x1="16" y1="16" x2="12" y2="9" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+  <!-- Minute hand pointing to 2 (10:10 position) -->
+  <line x1="16" y1="16" x2="22" y2="9" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="16" cy="16" r="1" fill="${color}"/>
+</svg>`;
+
+        // Convert SVG to data URL
+        const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        
+        // Update favicon
+        let favicon = document.querySelector('link[rel="icon"]');
+        if (!favicon) {
+            favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            favicon.type = 'image/svg+xml';
+            document.head.appendChild(favicon);
         }
         
-        this.updateThemeIcon();
+        // Clean up previous URL
+        if (favicon.href && favicon.href.startsWith('blob:')) {
+            URL.revokeObjectURL(favicon.href);
+        }
+        
+        favicon.href = svgUrl;
     }
 }
 

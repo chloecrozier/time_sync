@@ -219,7 +219,7 @@ function createMockDOM() {
             }));
         }
         if (selector === '.theme-icon') {
-            return [{ textContent: '🌙', style: { transform: '' } }];
+            return [{ textContent: '●', style: { transform: '' } }];
         }
         return [];
     };
