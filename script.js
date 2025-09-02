@@ -10,12 +10,26 @@ class TimeSync {
         this.isDragging = false;
         this.dragMode = null; // 'select' or 'deselect'
         
-        this.initializeTimeOptions();
+        // Check which page we're on
+        this.isHomePage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname.endsWith('/');
+        this.isPollPage = window.location.pathname.endsWith('poll.html');
+        
+        if (this.isHomePage) {
+            this.initializeTimeOptions();
+            this.displayCreatorTimezone();
+        }
+        
+        if (this.isPollPage) {
+            this.initializeTimeOptions();
+        }
+        
         this.bindEvents();
         this.initializeTheme();
-        this.displayCreatorTimezone();
-        this.loadPollFromURL();
         this.setupKeyboardNavigation();
+        
+        if (this.isPollPage) {
+            this.loadPollFromURL();
+        }
     }
 
     initializeTimeOptions() {
@@ -63,128 +77,199 @@ class TimeSync {
     }
 
     bindEvents() {
-        // Schedule type toggle
-        document.getElementById('generalDaysBtn').addEventListener('click', () => {
-            this.switchToGeneralDays();
-        });
+        // Theme toggle (available on both pages)
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                this.toggleTheme();
+            });
+        }
 
-        document.getElementById('specificDatesBtn').addEventListener('click', () => {
-            this.switchToSpecificDates();
-        });
+        // Home page events
+        if (this.isHomePage) {
+            // Schedule type toggle
+            const generalDaysBtn = document.getElementById('generalDaysBtn');
+            const specificDatesBtn = document.getElementById('specificDatesBtn');
+            
+            if (generalDaysBtn) {
+                generalDaysBtn.addEventListener('click', () => {
+                    this.switchToGeneralDays();
+                });
+            }
 
-        // Day selection
-        document.querySelectorAll('.day-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const day = parseInt(e.target.dataset.day);
-                if (this.selectedDays.has(day)) {
-                    this.selectedDays.delete(day);
-                    e.target.classList.remove('selected');
-                    e.target.setAttribute('aria-pressed', 'false');
-                } else {
-                    this.selectedDays.add(day);
-                    e.target.classList.add('selected');
-                    e.target.setAttribute('aria-pressed', 'true');
+            if (specificDatesBtn) {
+                specificDatesBtn.addEventListener('click', () => {
+                    this.switchToSpecificDates();
+                });
+            }
+
+            // Day selection
+            document.querySelectorAll('.day-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const day = parseInt(e.target.dataset.day);
+                    if (this.selectedDays.has(day)) {
+                        this.selectedDays.delete(day);
+                        e.target.classList.remove('selected');
+                        e.target.setAttribute('aria-pressed', 'false');
+                    } else {
+                        this.selectedDays.add(day);
+                        e.target.classList.add('selected');
+                        e.target.setAttribute('aria-pressed', 'true');
+                    }
+                });
+            });
+
+            // Date range selection
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+            
+            if (startDate) {
+                startDate.addEventListener('change', () => {
+                    this.updateDateRange();
+                });
+            }
+
+            if (endDate) {
+                endDate.addEventListener('change', () => {
+                    this.updateDateRange();
+                });
+            }
+
+            // Today button
+            const todayBtn = document.getElementById('todayBtn');
+            if (todayBtn) {
+                todayBtn.addEventListener('click', () => {
+                    this.setToday();
+                });
+            }
+
+            // Create poll button
+            const createPollBtn = document.getElementById('createPollBtn');
+            if (createPollBtn) {
+                createPollBtn.addEventListener('click', () => {
+                    this.createPoll();
+                });
+            }
+        }
+
+        // Poll page events
+        if (this.isPollPage) {
+            // Add user
+            const addUserBtn = document.getElementById('addUserBtn');
+            if (addUserBtn) {
+                addUserBtn.addEventListener('click', () => {
+                    this.addUser();
+                });
+            }
+
+            // Share poll - toggle dropdown
+            const shareBtn = document.getElementById('shareBtn');
+            if (shareBtn) {
+                shareBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleShareMenu();
+                });
+            }
+
+            // Share menu options
+            const copyUrlBtn = document.getElementById('copyUrlBtn');
+            if (copyUrlBtn) {
+                copyUrlBtn.addEventListener('click', () => {
+                    this.copyUrlToClipboard(window.location.href);
+                    this.hideShareMenu();
+                });
+            }
+
+            const showQRBtn = document.getElementById('showQRBtn');
+            if (showQRBtn) {
+                showQRBtn.addEventListener('click', () => {
+                    this.showQRCode();
+                    this.hideShareMenu();
+                });
+            }
+
+            const shareTextBtn = document.getElementById('shareTextBtn');
+            if (shareTextBtn) {
+                shareTextBtn.addEventListener('click', () => {
+                    this.copyShareMessage();
+                    this.hideShareMenu();
+                });
+            }
+
+            const exportIcsBtn = document.getElementById('exportIcsBtn');
+            if (exportIcsBtn) {
+                exportIcsBtn.addEventListener('click', () => {
+                    this.exportToCalendar();
+                    this.hideShareMenu();
+                });
+            }
+
+            // QR Modal
+            const closeQRModal = document.getElementById('closeQRModal');
+            if (closeQRModal) {
+                closeQRModal.addEventListener('click', () => {
+                    this.hideQRModal();
+                });
+            }
+
+            const downloadQRBtn = document.getElementById('downloadQRBtn');
+            if (downloadQRBtn) {
+                downloadQRBtn.addEventListener('click', () => {
+                    this.downloadQRCode();
+                });
+            }
+
+            // Copy calendar link
+            const copyCalendarBtn = document.getElementById('copyCalendarBtn');
+            if (copyCalendarBtn) {
+                copyCalendarBtn.addEventListener('click', () => {
+                    this.copyCalendarLink();
+                });
+            }
+
+            // New poll
+            const newPollBtn = document.getElementById('newPollBtn');
+            if (newPollBtn) {
+                newPollBtn.addEventListener('click', () => {
+                    this.resetApp();
+                });
+            }
+
+            // Enter key for user name
+            const userName = document.getElementById('userName');
+            if (userName) {
+                userName.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.addUser();
+                    }
+                });
+            }
+
+            // Update time button
+            const updateTimeBtn = document.getElementById('updateTimeBtn');
+            if (updateTimeBtn) {
+                updateTimeBtn.addEventListener('click', () => {
+                    this.updateTimeRange();
+                });
+            }
+
+            // Close share menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.share-dropdown')) {
+                    this.hideShareMenu();
                 }
             });
-        });
 
-        // Date range selection
-        document.getElementById('startDate').addEventListener('change', () => {
-            this.updateDateRange();
-        });
-
-        document.getElementById('endDate').addEventListener('change', () => {
-            this.updateDateRange();
-        });
-
-        // Today button
-        document.getElementById('todayBtn').addEventListener('click', () => {
-            this.setToday();
-        });
-
-        // Theme toggle
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            this.toggleTheme();
-        });
-
-        // Create poll button
-        document.getElementById('createPollBtn').addEventListener('click', () => {
-            this.createPoll();
-        });
-
-
-
-        // Add user
-        document.getElementById('addUserBtn').addEventListener('click', () => {
-            this.addUser();
-        });
-
-        // Share poll - toggle dropdown
-        document.getElementById('shareBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleShareMenu();
-        });
-
-        // Share menu options
-        document.getElementById('copyUrlBtn').addEventListener('click', () => {
-            this.copyUrlToClipboard(window.location.href);
-            this.hideShareMenu();
-        });
-
-        document.getElementById('showQRBtn').addEventListener('click', () => {
-            this.showQRCode();
-            this.hideShareMenu();
-        });
-
-        document.getElementById('shareTextBtn').addEventListener('click', () => {
-            this.copyShareMessage();
-            this.hideShareMenu();
-        });
-
-        document.getElementById('exportIcsBtn').addEventListener('click', () => {
-            this.exportToCalendar();
-            this.hideShareMenu();
-        });
-
-        // QR Modal
-        document.getElementById('closeQRModal').addEventListener('click', () => {
-            this.hideQRModal();
-        });
-
-        document.getElementById('downloadQRBtn').addEventListener('click', () => {
-            this.downloadQRCode();
-        });
-
-        // Copy calendar link
-        document.getElementById('copyCalendarBtn').addEventListener('click', () => {
-            this.copyCalendarLink();
-        });
-
-        // Close share menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.share-dropdown')) {
-                this.hideShareMenu();
+            // Close modal when clicking outside
+            const qrModal = document.getElementById('qrModal');
+            if (qrModal) {
+                qrModal.addEventListener('click', (e) => {
+                    if (e.target.id === 'qrModal') {
+                        this.hideQRModal();
+                    }
+                });
             }
-        });
-
-        // Close modal when clicking outside
-        document.getElementById('qrModal').addEventListener('click', (e) => {
-            if (e.target.id === 'qrModal') {
-                this.hideQRModal();
-            }
-        });
-
-        // New poll
-        document.getElementById('newPollBtn').addEventListener('click', () => {
-            this.resetApp();
-        });
-
-        // Enter key for user name
-        document.getElementById('userName').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.addUser();
-            }
-        });
+        }
     }
 
     switchToGeneralDays() {
@@ -307,6 +392,43 @@ class TimeSync {
         this.updateDateRange();
     }
 
+    updateTimeRange() {
+        if (!this.currentPoll) return;
+        
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+
+        // Validation
+        if (startTime >= endTime) {
+            this.showToast('End time must be after start time');
+            return;
+        }
+
+        // Check for reasonable time range (at least 30 minutes)
+        const startMinutes = this.timeToMinutes(startTime);
+        const endMinutes = this.timeToMinutes(endTime);
+        if (endMinutes - startMinutes < 30) {
+            this.showToast('Time range must be at least 30 minutes');
+            return;
+        }
+
+        // Update the poll
+        this.currentPoll.startTime = startTime;
+        this.currentPoll.endTime = endTime;
+        
+        // Clear all existing availability since time slots have changed
+        this.allAvailability = {};
+        this.currentUser = null;
+        
+        // Save and refresh display
+        this.savePollToStorage();
+        this.renderAvailabilityGrid();
+        this.renderParticipants();
+        this.updateSuggestions();
+        
+        this.showToast('Schedule updated! All availability has been reset.');
+    }
+
     createPoll() {
         const title = document.getElementById('pollTitle').value.trim();
         const startTime = document.getElementById('startTime').value;
@@ -368,8 +490,9 @@ class TimeSync {
 
         this.allAvailability = {};
         this.savePollToStorage();
-        this.displayPoll();
-        this.updateURL();
+        
+        // Navigate to poll page instead of displaying inline
+        window.location.href = `poll.html?poll=${this.currentPoll.id}`;
     }
 
     displayPoll() {
@@ -385,6 +508,16 @@ class TimeSync {
             timezoneText += ` (Poll created in ${creatorTimezone})`;
         }
         document.getElementById('currentTimezone').textContent = timezoneText;
+
+        // Set current time values in the dropdowns
+        if (this.isPollPage) {
+            const startTime = document.getElementById('startTime');
+            const endTime = document.getElementById('endTime');
+            if (startTime && endTime) {
+                startTime.value = this.currentPoll.startTime;
+                endTime.value = this.currentPoll.endTime;
+            }
+        }
 
         this.renderDaysHeader();
         this.renderAvailabilityGrid();
@@ -1004,25 +1137,32 @@ Powered by TimeSync`;
         const qrContainer = document.getElementById('qrCodeContainer');
         const modal = document.getElementById('qrModal');
         
-        // Clear previous QR code
-        qrContainer.innerHTML = '';
-        
-        // Generate QR code using a simple QR code service
-        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
-        
-        const qrImage = document.createElement('img');
-        qrImage.src = qrCodeUrl;
-        qrImage.alt = 'QR Code for poll';
-        qrImage.style.maxWidth = '100%';
-        qrImage.style.height = 'auto';
-        
-        qrContainer.appendChild(qrImage);
-        modal.style.display = 'flex';
+        if (qrContainer && modal) {
+            // Clear previous QR code
+            qrContainer.innerHTML = '';
+            
+            // Generate QR code using a simple QR code service
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            
+            const qrImage = document.createElement('img');
+            qrImage.src = qrCodeUrl;
+            qrImage.alt = 'QR Code for poll';
+            qrImage.style.maxWidth = '100%';
+            qrImage.style.height = 'auto';
+            
+            qrContainer.appendChild(qrImage);
+            modal.style.display = 'flex';
+        } else {
+            // Fallback: copy URL instead
+            this.copyUrlToClipboard(url);
+        }
     }
 
     hideQRModal() {
         const modal = document.getElementById('qrModal');
-        modal.style.display = 'none';
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
 
     downloadQRCode() {
@@ -1398,51 +1538,29 @@ Powered by TimeSync`;
             }
         }
         
-        this.selectedDays.clear();
-        this.selectedDates = [];
-        this.currentPoll = null;
-        this.userAvailability = {};
-        this.allAvailability = {};
-        this.currentUser = null;
-        this.isDragging = false;
-        this.dragMode = null;
-        
-        document.getElementById('pollCreator').style.display = 'block';
-        document.getElementById('pollDisplay').style.display = 'none';
-        document.getElementById('pollTitle').value = '';
-        document.getElementById('userName').value = '';
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
-        
-        // Reset to general days mode
-        this.switchToGeneralDays();
-        
-        document.querySelectorAll('.day-btn').forEach(btn => {
-            btn.classList.remove('selected');
-        });
-        
-        // Clear URL
-        const url = new URL(window.location);
-        url.searchParams.delete('poll');
-        window.history.pushState({}, '', url);
-        
-        this.showToast('Ready to create a new poll!');
+        // Navigate back to home page
+        window.location.href = 'index.html';
     }
 
     showToast(message, duration = 3000, type = 'info') {
         const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.className = `toast ${type}`;
-        toast.classList.add('show');
-        
-        // Clear any existing timeout
-        if (this.toastTimeout) {
-            clearTimeout(this.toastTimeout);
+        if (toast) {
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            
+            // Clear any existing timeout
+            if (this.toastTimeout) {
+                clearTimeout(this.toastTimeout);
+            }
+            
+            this.toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        } else {
+            // Fallback: use browser alert if toast element doesn't exist
+            alert(message);
         }
-        
-        this.toastTimeout = setTimeout(() => {
-            toast.classList.remove('show');
-        }, duration);
         
         // Add accessibility announcement
         this.announceToScreenReader(message);

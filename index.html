@@ -71,6 +71,11 @@
                     <div class="selected-dates" id="selectedDates"></div>
                 </div>
 
+                <div class="creator-timezone">
+                    <span class="timezone-label">Your timezone:</span>
+                    <span id="creatorTimezone"></span>
+                </div>
+
                 <div class="time-range-group">
                     <div class="form-group">
                         <label for="startTime">Start Time</label>
@@ -82,99 +87,12 @@
                     </div>
                 </div>
 
-                <div class="creator-timezone">
-                    <span class="timezone-label">Your timezone:</span>
-                    <span id="creatorTimezone"></span>
-                </div>
-
                 <button class="create-poll-btn" id="createPollBtn">Create Poll</button>
             </div>
-
-            <!-- Poll Display Section -->
-            <div class="poll-display" id="pollDisplay" style="display: none;">
-                <div class="section-header">
-                    <h2 id="pollTitleDisplay"></h2>
-                    <div class="action-buttons">
-                        <div class="share-dropdown">
-                            <button class="action-btn" id="shareBtn">Share Poll</button>
-                            <div class="share-menu" id="shareMenu">
-                                <button class="share-option" id="copyUrlBtn">
-                                    <span class="share-icon">⧉</span>
-                                    Copy Link
-                                </button>
-                                <button class="share-option" id="showQRBtn">
-                                    <span class="share-icon">⊞</span>
-                                    QR Code
-                                </button>
-                                <button class="share-option" id="shareTextBtn">
-                                    <span class="share-icon">⊡</span>
-                                    Copy Message
-                                </button>
-                                <button class="share-option" id="exportIcsBtn">
-                                    <span class="share-icon">⊟</span>
-                                    Export Calendar
-                                </button>
-                            </div>
-                        </div>
-                        <button class="action-btn secondary" id="copyCalendarBtn">Copy Schedule</button>
-                    </div>
-                </div>
-                <div class="timezone-info">
-                    <span id="currentTimezone"></span>
-                </div>
-                </div>
-
-                <div class="user-input-section">
-                    <div class="form-group">
-                        <label for="userName">Your Name</label>
-                        <input type="text" id="userName" placeholder="Enter your name to start marking availability" maxlength="50" required aria-describedby="userNameHelp" />
-                        <div id="userNameHelp" class="sr-only">Enter your name to start marking your availability on the schedule</div>
-                        <button id="addUserBtn" type="button">Start Marking</button>
-                    </div>
-                    <p class="instruction-text">After clicking "Start Marking", click on time slots below to mark when you're available</p>
-                </div>
-
-                <div class="availability-grid-container">
-                    <div class="grid-header">
-                        <div class="time-column-header">Time</div>
-                        <div class="days-header" id="daysHeader"></div>
-                    </div>
-                    <div class="availability-grid" id="availabilityGrid" role="grid" aria-label="Availability schedule - click and drag to mark your availability"></div>
-                </div>
-
-                <div class="suggestions-section" id="suggestionsSection" style="display: none;">
-                    <h3>Suggested Times</h3>
-                    <div class="suggestions-list" id="suggestionsList"></div>
-                </div>
-
-                <div class="participants-section">
-                    <h3>Participants</h3>
-                    <div class="participants-list" id="participantsList"></div>
-                </div>
-
-                <button class="new-poll-btn" id="newPollBtn">Create New Poll</button>
-            </div>
         </div>
     </div>
 
-    <div class="toast" id="toast"></div>
 
-    <!-- QR Code Modal -->
-    <div id="qrModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Share via QR Code</h3>
-                <button class="modal-close" id="closeQRModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="qrCodeContainer" class="qr-container"></div>
-                <p class="qr-instructions">Scan this QR code with your phone to open the poll</p>
-                <div class="qr-actions">
-                    <button class="action-btn secondary" id="downloadQRBtn">Download QR Code</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="script.js"></script>
 </body>
